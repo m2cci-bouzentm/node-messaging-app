@@ -35,42 +35,8 @@ const validateUserSignUp = [
       return true;
     }),
 ];
-const validateUserSettingsChange = [
-  body('username')
-    .trim()
-    .notEmpty()
-    .withMessage('Comment content cannot be empty')
-    .isLength({ min: 3, max: 1500 })
-    .withMessage('Comment content must be at least 3 characters long'),
-  body('email').isEmail().withMessage('Enter a valid email'),
-  body('password')
-    .trim()
-    .notEmpty()
-    .withMessage('Password cannot be empty')
-    .isLength({ min: 3, max: 50 })
-    .withMessage('Password must be at least 3 characters long'),
-  body('passwordConfirmation')
-    .trim()
-    .notEmpty()
-    .withMessage('Confirm password cannot be empty')
-    .isLength({ min: 3, max: 50 })
-    .withMessage('Confirm password must be at least 3 characters long')
-    .custom((value, { req }) => {
-      if (value !== req.body.password) {
-        throw new Error('Password confirmation does not match password');
-      }
-      return true;
-    }),
-  body('avatarUrl'),
-];
 
-// helper function
-const isLoggedIn = (res, req, next) => {
-  if (req.currentUser === null) {
-    return next(new Error('User Not logged In'));
-  }
-  next();
-};
+
 
 // verify user function to check if user exists in the current database (just like passport verify function) 
 const verifyUser = async (username, password) => {
@@ -85,10 +51,11 @@ const verifyUser = async (username, password) => {
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
+  // const isMatch = password===user.password;
   if (!isMatch) {
     return { message: 'Incorrect password' };
   }
-  
+
   delete user.password;
   return { user };
 };
@@ -145,18 +112,14 @@ const handleUserSignUp = [
 
 const verifyUserLogIn = (req, res, next) => {
   if (req.currentUser === null) {
-    next(new Error('User Not logged In'));
+    return next(new Error({ msg: 'User Not logged In', jwtError: req.jwtErrorMessage }));
   }
 
   res.json(req.currentUser);
 };
 
 
-
-
-
-
-
+ 
 
 
 
@@ -165,5 +128,4 @@ module.exports = {
   handleUserLogin,
   handleUserSignUp,
   verifyUserLogIn,
-
 }
