@@ -21,7 +21,7 @@ const AuthenticatedNav = ({
     setIsSettingsMenu(false);
     setIsLoggedIn(false);
     setCurrentUser(null);
-    localStorage.removeItem('authorToken');
+    localStorage.removeItem('userToken');
   };
   return (
     <div className="flex items-center space-x-4">

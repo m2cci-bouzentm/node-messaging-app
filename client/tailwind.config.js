@@ -13,7 +13,8 @@ export default {
   		},
   		colors: {
 				main: '#18181B',
-				secondary: '#FAFAFA'
+				secondary: '#FAFAFA',
+				hover: '#f8fafc'
 			}
   	}
   },

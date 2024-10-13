@@ -4,6 +4,7 @@ import { Form, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRef, useState } from 'react';
 import { User, validationError } from '@/types';
+import { validURL } from '@/helpers';
 
 interface SettingsComponentProps {
   currentUser: User | null;
@@ -54,7 +55,7 @@ const SettingsComponent = ({
     setUsernameError(null);
     setCurrentUser(data.userWithoutPw);
     setUserToken(data.token);
-    localStorage.setItem('authorToken', data.token);
+    localStorage.setItem('userToken', data.token);
   };
 
   const handleEmailChange = async () => {
@@ -80,7 +81,7 @@ const SettingsComponent = ({
     setEmailError(null);
     setCurrentUser(data.userWithoutPw);
     setUserToken(data.token);
-    localStorage.setItem('authorToken', data.token);
+    localStorage.setItem('userToken', data.token);
   };
 
   const handlePasswordChange = async () => {
@@ -109,11 +110,16 @@ const SettingsComponent = ({
     setPasswordError(null);
     setCurrentUser(data.userWithoutPw);
     setUserToken(data.token);
-    localStorage.setItem('authorToken', data.token);
+    localStorage.setItem('userToken', data.token);
   };
 
   const handleAvatarUrlChange = async () => {
     const avatarUrl = avatarUrlRef?.current?.value;
+
+    if (avatarUrl && !validURL(avatarUrl)) {
+      return setEmailError({ msg: 'Not valid url' });
+    }
+
     const res = await fetch(import.meta.env.VITE_API_BASE_URL + '/settings/avatarUrl', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userToken}` },
@@ -124,8 +130,8 @@ const SettingsComponent = ({
     });
     const data = await res.json();
 
-    if (typeof data.errors !== 'undefined') {
-      return setEmailError(data.errors[0]);
+    if (typeof data.errors !== 'undefined' || !res.ok) {
+      return setAvatarUrlError(data.errors[0]);
     }
 
     if (avatarUrlRef.current) {
@@ -135,10 +141,10 @@ const SettingsComponent = ({
     setAvatarUrlError(null);
     setCurrentUser(data.userWithoutPw);
     setUserToken(data.token);
-    localStorage.setItem('authorToken', data.token);
+    localStorage.setItem('userToken', data.token);
   };
   return (
-    <div className='w-[70%] m-auto'>
+    <div className="w-[70%] m-auto">
       <Form {...form}>
         <h1 className="font-bold text-4xl ">Settings</h1>
         <div className="settings-container space-y-12 w-[70%] m-auto">

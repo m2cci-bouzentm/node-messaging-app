@@ -1,41 +1,81 @@
 import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Route, Link, Routes, Navigate } from 'react-router-dom';
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuList,
 } from '@/components/ui/navigation-menu';
-import { BrowserRouter as Router, Route, Link, Routes, Navigate } from 'react-router-dom';
 import NotAuthenticatedNav from './components/NotAuthenticatedNav';
 import SignUpComponent from './components/SignUpComponent';
 import LoginComponent from './components/LoginComponent';
 import SettingsComponent from './components/SettingsComponent';
 import MainComponent from './components/MainComponent';
-import { User } from './types';
 import AuthenticatedNav from './components/AuthenticatedNav';
+
+import { User } from './types';
+
+import io, { Socket } from 'socket.io-client';
+
+const useSocket = (isLoggedIn: boolean): Socket | null => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+    // connect only if user is logged in
+    const socket = io(import.meta.env.VITE_API_BASE_URL);
+    setSocket(socket);
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [isLoggedIn]);
+
+  return socket;
+};
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userToken, setUserToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    // authenticate user
-    // create ws connect
-    // get user token from local storage
+  const [room, setRoom] = useState<string | null>(null);
 
-    fetch(import.meta.env.VITE_API_BASE_URL + '/verify')
+  const socket = useSocket(isLoggedIn);
+
+  // will be an useAuthentication hook
+  useEffect(() => {
+    const storedToken = localStorage.getItem('userToken');
+    if (!storedToken) {
+      return;
+    }
+
+    fetch(import.meta.env.VITE_API_BASE_URL + '/verifyLogin', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${storedToken}`,
+      },
+    })
       .then((res) => res.json())
-      .then(user => {
+      .then((user) => {
         setCurrentUser(user);
+        setUserToken(storedToken);
         setIsLoggedIn(true);
       })
-      .catch(err=>{
-        console.log('Verifying Logging error...');
+      .catch((err) => {
+        console.log('An error occurred when verifying user logging...');
         console.log(err);
       });
-
-    return () => {};
   }, []);
+
+  useEffect(() => {
+    console.log(socket);
+
+    socket?.on('test', (data: string) => {
+      console.log(data);
+    });
+  }, [socket]);
 
   return (
     <Router>
@@ -63,38 +103,58 @@ function App() {
 
       <main className="w-[90%] flex flex-col m-auto text-main">
         <Routes>
-          <Route path="/" element={<MainComponent />} />
-          <Route
-            path="/login"
-            element={
-              <LoginComponent
-                setUserToken={setUserToken}
-                setCurrentUser={setCurrentUser}
-                setIsLoggedIn={setIsLoggedIn}
+          {isLoggedIn ? (
+            // authenticated_only_routes
+            <>
+              <Route
+                path="/"
+                element={
+                  <MainComponent
+                    isLoggedIn={isLoggedIn}
+                    currentUser={currentUser}
+                    userToken={userToken}
+                  />
+                }
               />
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <SignUpComponent
-                setUserToken={setUserToken}
-                setCurrentUser={setCurrentUser}
-                setIsLoggedIn={setIsLoggedIn}
+              <Route
+                path="/settings"
+                element={
+                  <SettingsComponent
+                    currentUser={currentUser}
+                    userToken={userToken}
+                    setUserToken={setUserToken}
+                    setCurrentUser={setCurrentUser}
+                  />
+                }
               />
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <SettingsComponent
-                currentUser={currentUser}
-                userToken={userToken}
-                setUserToken={setUserToken}
-                setCurrentUser={setCurrentUser}
+              <Route path="*" element={<Navigate to="/" />} />
+            </>
+          ) : (
+            // no_authenticated_routes
+            <>
+              <Route
+                path="/login"
+                element={
+                  <LoginComponent
+                    setUserToken={setUserToken}
+                    setCurrentUser={setCurrentUser}
+                    setIsLoggedIn={setIsLoggedIn}
+                  />
+                }
               />
-            }
-          />
+              <Route
+                path="/signup"
+                element={
+                  <SignUpComponent
+                    setUserToken={setUserToken}
+                    setCurrentUser={setCurrentUser}
+                    setIsLoggedIn={setIsLoggedIn}
+                  />
+                }
+              />
+              <Route path="*" element={<Navigate to="/login" />} />
+            </>
+          )}
         </Routes>
       </main>
 
