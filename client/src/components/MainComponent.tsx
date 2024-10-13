@@ -43,6 +43,7 @@ const MainComponent = ({ isLoggedIn, currentUser, userToken }: MainComponentProp
   const [searchedUsers, setSearchedUsers] = useState<User[] | null>(null);
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [room, setRoom] = useState<string | null>(null);
 
   useEffect(() => {
     setSearchedUsers(users);
@@ -55,7 +56,7 @@ const MainComponent = ({ isLoggedIn, currentUser, userToken }: MainComponentProp
     }
   };
 
-  // create conversation OR get existing conversation
+  // create conversation OR gets an existing one
   const handleCreateConversation = (receiverId: string) => {
     setReceiverId(receiverId);
 
@@ -82,7 +83,7 @@ const MainComponent = ({ isLoggedIn, currentUser, userToken }: MainComponentProp
 
   return (
     <div className="flex h-[600px] items-start justify-between">
-      {/* TODO add conversations list */}
+      {/* TODO add old conversations list */}
       <aside className="w-[30%] h-[75%]">
         <ScrollArea className="h-full w-full rounded-md border">
           <div className="users-list p-4">
@@ -124,6 +125,7 @@ const MainComponent = ({ isLoggedIn, currentUser, userToken }: MainComponentProp
         currentUser={currentUser}
         receiverId={receiverId}
         conversation={conversation}
+        setConversation={setConversation}
       />
     </div>
   );

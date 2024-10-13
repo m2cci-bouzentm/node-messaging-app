@@ -14,7 +14,7 @@ const MessageItem = ({ receiver, message, currentUser }: MessageItemProps) => {
     <>
       {/* receiver's messages */}
       {message?.senderId !== currentUser?.id ? (
-        <Card className="flex justify-start items-start w-[45%] rounded-xl self-start bg-secondary py-2 px-0">
+        <Card className="message flex justify-start items-start w-[45%] rounded-xl self-start bg-secondary py-2 px-0">
           <CardHeader className="flex items-center p-4 pt-0">
             <Avatar>
               <AvatarImage
@@ -30,7 +30,7 @@ const MessageItem = ({ receiver, message, currentUser }: MessageItemProps) => {
         </Card>
       ) : (
         /* user's messages */
-        <Card className="flex justify-end items-center w-[45%] rounded-xl self-end bg-main text-secondary py-2 px-0">
+        <Card className="message flex justify-end items-center w-[45%] rounded-xl self-end bg-main text-secondary py-2 px-0">
           <CardContent className="w-full p-0 pl-4 self-start">{message?.content}</CardContent>
           <CardFooter className="p-4 pt-0">
             <Avatar>
