@@ -34,16 +34,21 @@ const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null 
 };
 
 interface MainComponentProps {
+  connectedUsers: User[];
   isLoggedIn: boolean;
   currentUser: User | null;
   userToken: string | null;
 }
-const MainComponent = ({ isLoggedIn, currentUser, userToken }: MainComponentProps) => {
+const MainComponent = ({
+  connectedUsers,
+  isLoggedIn,
+  currentUser,
+  userToken,
+}: MainComponentProps) => {
   const users = useUsers(isLoggedIn, userToken);
   const [searchedUsers, setSearchedUsers] = useState<User[] | null>(null);
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [room, setRoom] = useState<string | null>(null);
 
   useEffect(() => {
     setSearchedUsers(users);
@@ -72,7 +77,7 @@ const MainComponent = ({ isLoggedIn, currentUser, userToken }: MainComponentProp
       }),
     })
       .then((res) => res.json())
-      .then((conversation) => {      
+      .then((conversation) => {
         console.log(conversation);
         setConversation(conversation);
       })
@@ -81,6 +86,9 @@ const MainComponent = ({ isLoggedIn, currentUser, userToken }: MainComponentProp
       });
   };
 
+  const isConnectedUser = (connectedUsers: User[], checkedUser: User): boolean => {
+    return connectedUsers.some((user) => user.id === checkedUser.id);
+  };
   return (
     <div className="flex h-[600px] items-start justify-between">
       {/* TODO add old conversations list */}
@@ -111,7 +119,12 @@ const MainComponent = ({ isLoggedIn, currentUser, userToken }: MainComponentProp
                         }
                       />
                     </Avatar>
-                    <div className="text-sm p-4">{user.username}</div>
+                    <div className="flex w-full justify-between items-center">
+                      <div className="text-sm p-4">{user.username}</div>
+                      {isConnectedUser(connectedUsers, user) && (
+                        <div className="online-status h-2 w-2 bg-green-500 text-green-500 rounded-full"></div>
+                      )}
+                    </div>
                   </div>
                   <Separator />
                 </div>

@@ -40,7 +40,8 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userToken, setUserToken] = useState<string | null>(null);
-  // const socket = useSocket(isLoggedIn);
+  const socket = useSocket(isLoggedIn);
+  const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
 
   //TODO will be an useAuthentication hook
   useEffect(() => {
@@ -66,6 +67,18 @@ function App() {
         console.log(err);
       });
   }, []);
+
+  useEffect(() => {
+    if (!socket || !currentUser) {
+      return;
+    }
+
+    socket?.emit('user-connected', currentUser);
+    socket?.on('share-connected-user', (connectedUsers) => {
+      console.log(connectedUsers);
+      setConnectedUsers(connectedUsers);
+    });
+  }, [socket, currentUser]);
 
   return (
     <SocketContext.Provider value={useSocket(isLoggedIn)}>
@@ -101,6 +114,7 @@ function App() {
                   path="/"
                   element={
                     <MainComponent
+                      connectedUsers={connectedUsers}
                       isLoggedIn={isLoggedIn}
                       currentUser={currentUser}
                       userToken={userToken}

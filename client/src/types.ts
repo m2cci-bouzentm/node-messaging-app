@@ -7,6 +7,8 @@ export interface User {
   sentMessages?: Message[];
   receivedMessages?: Message[];
   conversations?: Conversation[];
+  iat?: number;
+  exp?: number;
 }
 export interface Message {
   id: string;

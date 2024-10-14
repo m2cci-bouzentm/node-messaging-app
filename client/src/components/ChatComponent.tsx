@@ -70,6 +70,11 @@ const getReceiver = (
     });
 };
 
+const scrollToLastMsg = (scrollAresRef: HTMLDivElement | null): void => {
+  setTimeout(() => {
+    scrollAresRef?.scrollIntoView(false);
+  }, 100);
+};
 interface chatAppProps {
   userToken: string | null;
   currentUser: User | null;
@@ -90,12 +95,13 @@ const ChatComponent = ({
   const [receiver, setReceiver] = useState<User | null>(null);
   const socket = useContext(SocketContext);
 
+  const scrollAresRef = useRef<HTMLDivElement | null>(null);
+
   // get conversation and receiver information
   useEffect(() => {
     if (!receiverId) {
       return;
     }
-
     getReceiver(userToken, receiverId, setReceiver);
   }, [receiverId]);
 
@@ -103,6 +109,8 @@ const ChatComponent = ({
     if (!conversation) {
       return;
     }
+
+    scrollToLastMsg(scrollAresRef.current);
     // join the room of the conversation whenever it changes
     socket?.emit('join-room', conversation?.id);
   }, [conversation?.id]);
@@ -114,10 +122,16 @@ const ChatComponent = ({
     // listen to received messages in real time when mounting
     socket?.on('receive-chat-message', (message: Message) => {
       console.log('receive-chat-message');
+      //TODO in case of multiple events for the same msg
+      // if(conversation.messages?.includes(message))
+      // {
+      //   return; //! can cause problems ????
+      // }
       conversation.messages?.push(message);
       setConversation({ ...conversation });
+      scrollToLastMsg(scrollAresRef.current);
     });
-  }, [conversation?.id]);
+  }, []);
 
   const handleMessageSend: ReactEventHandler = () => {
     const message = messageInputRef.current?.value;
@@ -125,7 +139,7 @@ const ChatComponent = ({
     // real time chatting logic :
     if (userToken && currentUser && receiverId && message && conversation) {
       const tempMsg: Message = {
-        id: uuid(), //as temp id just for rendering purposes
+        id: uuid(), // as temp id just for rendering purposes
         senderId: currentUser?.id,
         receiverId,
         content: message,
@@ -145,12 +159,9 @@ const ChatComponent = ({
       sendMessage(userToken, currentUser.id, receiverId, message, conversation.id);
       messageInputRef.current.value = '';
     }
-  };
 
-  // const handleScrollDown = () => {
-  //   console.log(scrollArea?.current);
-  //   scrollArea.current?.scrollIntoView();
-  // };
+    scrollToLastMsg(scrollAresRef.current);
+  };
 
   return (
     receiverId && (
@@ -177,10 +188,10 @@ const ChatComponent = ({
 
         <Separator className="mb-4" />
 
-        {/* TODO scroll to latest messages */}
+        {/* TODO send pictures and host them */}
         {/* TODO add timestamp for messages*/}
         <ScrollArea className="h-[65%] scrollable">
-          <CardContent className="space-y-8 text-sm flex flex-col">
+          <CardContent ref={scrollAresRef} className="space-y-8 text-sm flex flex-col">
             {conversation?.messages?.map((message) => (
               <MessageItem
                 key={message.id}
@@ -195,11 +206,15 @@ const ChatComponent = ({
         <CardFooter className="space-x-4 py-4 z-10">
           <Input
             ref={messageInputRef}
+            onKeyDown={(e) => (e.code === 'Enter' ? handleMessageSend(e) : null)}
             type="message"
             className="z-10 h-12"
             placeholder="Type a message..."
           />
-          <Button onClick={handleMessageSend}> Send </Button>
+          <Button type="submit" onClick={handleMessageSend}>
+            {' '}
+            Send{' '}
+          </Button>
         </CardFooter>
       </Card>
     )

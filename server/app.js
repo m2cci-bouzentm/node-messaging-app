@@ -81,10 +81,22 @@ app.use('/users', isAuthorized, usersRouter);
 app.use('/conversation', isAuthorized, conversationRouter);
 app.use('/settings', isAuthorized, settingsRouter);
 
-
+//TODO needs to bo stocked outside of the socket connection, maybe on the db or oh the memory
+const connectedUsers = [];
 io.on('connection', (socket) => {
 
-  socket.emit('EventName', 'data');
+  socket.on('user-connected', (user) => {
+    delete user['iat'];
+    delete user['exp'];    
+    // send the user the already connected users
+    socket.emit('share-connected-user', connectedUsers);
+
+    // add the new user to the list of connected users
+    connectedUsers.push(user);
+
+    // share to everyone else the updated connected users
+    socket.broadcast.emit('share-connected-user', connectedUsers);
+  });
 
   socket.on('send-chat-message', (message, room) => {
     socket.to(room).emit('receive-chat-message', message);
@@ -93,6 +105,14 @@ io.on('connection', (socket) => {
   socket.on('join-room', (room) => {
     socket.join(room);
   });
+
+  socket.on("disconnect", (user) => {
+    if(connectedUsers.includes(user)){
+      delete connectedUsers[user];
+    }
+    socket.broadcast.emit('share-connected-user', connectedUsers);
+  });
+
 
 });
 
