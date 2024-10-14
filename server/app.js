@@ -88,7 +88,7 @@ const connectedUsers = [];
 io.on('connection', (socket) => {
 
   socket.on('user-connected', (user) => {
-    
+
     // send the user the already connected users
     socket.emit('share-connected-user', connectedUsers);
 
@@ -113,18 +113,26 @@ io.on('connection', (socket) => {
   });
 
 
-  // TODO persist user connection for at least 10secondes before removing it
   // remove user from connected users when he logs off
   socket.on("user-disconnected", (user) => {
     console.log("user disconnected ...");
 
     const userIndex = connectedUsers.findIndex(u => u.id === user.id);
+    const disconnectedUser = user;
 
     if (userIndex !== -1) {
       connectedUsers.splice(userIndex, 1);
     }
-    socket.broadcast.emit('share-connected-user', connectedUsers);
+
+    // persist user online status for at least 5 secondes before removing it
+    setTimeout(() => {
+      // if the disconnectedUser hasn't reconnected in 5sec, then he is disconnected
+      if (!(connectedUsers.some(u => u.id === disconnectedUser.id))) {
+        socket.broadcast.emit('share-connected-user', connectedUsers);
+      }
+    }, 5000)
   });
+
 });
 
 instrument(io, {

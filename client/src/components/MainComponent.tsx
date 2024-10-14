@@ -1,4 +1,4 @@
-import { ReactEventHandler, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -62,7 +62,7 @@ const MainComponent = ({
   };
 
   // create conversation OR gets an existing one
-  const handleCreateConversation = (receiverId: string) => {
+  const handleCreateOrGetExistingConversation = (receiverId: string) => {
     setReceiverId(receiverId);
 
     fetch(`${import.meta.env.VITE_API_BASE_URL}/conversation/twoUsers`, {
@@ -89,6 +89,7 @@ const MainComponent = ({
   const isConnectedUser = (connectedUsers: User[], checkedUser: User): boolean => {
     return connectedUsers.some((user) => user.id === checkedUser.id);
   };
+  
   return (
     <div className="flex h-[600px] items-start justify-between">
       {/* TODO add old conversations list */}
@@ -106,7 +107,7 @@ const MainComponent = ({
               searchedUsers.map((user) => (
                 <div
                   key={user.id}
-                  onClick={() => handleCreateConversation(user.id)}
+                  onClick={() => handleCreateOrGetExistingConversation(user.id)}
                   className="cursor-pointer hover:bg-hover py-1"
                 >
                   <div className="flex space-x-2 items-center py-1">
@@ -137,6 +138,7 @@ const MainComponent = ({
         userToken={userToken}
         currentUser={currentUser}
         receiverId={receiverId}
+        setReceiverId={setReceiverId}
         conversation={conversation}
         setConversation={setConversation}
         isConnectedUser={isConnectedUser}

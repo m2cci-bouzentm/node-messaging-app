@@ -114,7 +114,7 @@ function App() {
           </div>
         </NavigationMenu>
 
-        <main className="w-[90%] flex flex-col m-auto text-main">
+        <main className="w-[90%] xl:w-[60%] flex flex-col m-auto text-main">
           <Routes>
             {isLoggedIn ? (
               // authenticated_only_routes

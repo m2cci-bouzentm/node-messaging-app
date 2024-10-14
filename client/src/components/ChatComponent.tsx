@@ -25,6 +25,7 @@ import { Conversation, Message, User } from '@/types';
 import { validURL } from '@/helpers';
 import { SocketContext } from '../context';
 import { v4 as uuid } from 'uuid';
+import CloseIcon from './ui/CloseIcon';
 
 const sendMessage = (
   userToken: string,
@@ -79,6 +80,7 @@ interface chatAppProps {
   userToken: string | null;
   currentUser: User | null;
   receiverId: string | null;
+  setReceiverId: Dispatch<SetStateAction<string | null>>;
   conversation: Conversation | null;
   setConversation: Dispatch<SetStateAction<Conversation | null>>;
   isConnectedUser: (connectedUsers: User[], user: User) => boolean;
@@ -89,6 +91,7 @@ const ChatComponent = ({
   userToken,
   currentUser,
   receiverId,
+  setReceiverId,
   conversation,
   setConversation,
   isConnectedUser,
@@ -168,40 +171,46 @@ const ChatComponent = ({
     scrollToLastMsg(scrollAresRef.current);
   };
 
+  const handleCloseChat = (): void => {
+    setConversation(null);
+    setReceiverId(null);
+  };
+
   return (
     receiverId && (
-      <Card className="w-[60%] h-[90%]">
+      <Card className="w-[60%] h-[90%] transition-all ">
         <CardHeader>
-          <div className="flex space-x-4">
-            <Avatar>
-              <AvatarImage
-                src={
-                  validURL(receiver?.avatarUrl || '')
-                    ? receiver?.avatarUrl
-                    : 'https://github.com/shadcn.png'
-                }
-              />
-            </Avatar>
-            <div>
-              <CardTitle className='flex items-center space-x-2'>
-                <div>@{receiver && receiver.username}</div>
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-4">
+              <Avatar>
+                <AvatarImage
+                  src={
+                    validURL(receiver?.avatarUrl || '')
+                      ? receiver?.avatarUrl
+                      : 'https://github.com/shadcn.png'
+                  }
+                />
+              </Avatar>
+              <div>
+                <CardTitle className="flex items-center space-x-2">
+                  <div>@{receiver && receiver.username}</div>
+                  {receiver && isConnectedUser(connectedUsers, receiver) && (
+                    <div className="online-status h-2 w-2 bg-green-500 text-green-500 rounded-full"></div>
+                  )}
+                </CardTitle>
                 {receiver && isConnectedUser(connectedUsers, receiver) && (
-                  <div className="online-status h-2 w-2 bg-green-500 text-green-500 rounded-full"></div>
+                  <CardDescription className="text-sm"> Online</CardDescription>
                 )}
-              </CardTitle>
-
-              {/* TODO online status */}
-              {receiver && isConnectedUser(connectedUsers, receiver) && (
-                <CardDescription className="text-sm"> Online</CardDescription>
-              )}
+              </div>
             </div>
+
+            <CloseIcon clickEventHandler={handleCloseChat} />
           </div>
         </CardHeader>
 
         <Separator className="mb-4" />
 
         {/* TODO send pictures and host them */}
-        {/* TODO add timestamp for messages*/}
         <ScrollArea className="h-[65%] scrollable">
           <CardContent ref={scrollAresRef} className="space-y-8 text-sm flex flex-col">
             {conversation?.messages?.map((message) => (
@@ -218,14 +227,15 @@ const ChatComponent = ({
         <CardFooter className="space-x-4 py-4 z-10">
           <Input
             ref={messageInputRef}
-            onKeyDown={(e) => (e.code === 'Enter' ? handleMessageSend(e) : null)}
+            onKeyDown={(e) =>
+              e.code === 'Enter' || e.code === 'NumpadEnter' ? handleMessageSend(e) : null
+            }
             type="message"
             className="z-10 h-12"
             placeholder="Type a message..."
           />
           <Button type="submit" onClick={handleMessageSend}>
-            {' '}
-            Send{' '}
+            Send
           </Button>
         </CardFooter>
       </Card>

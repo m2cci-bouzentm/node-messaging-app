@@ -15,7 +15,7 @@ export default {
 				main: '#18181B',
 				secondary: '#FAFAFA',
 				hover: '#f8fafc'
-			}
+			},
   	}
   },
   plugins: [require("tailwindcss-animate")],
