@@ -78,6 +78,15 @@ function App() {
       console.log(connectedUsers);
       setConnectedUsers(connectedUsers);
     });
+
+    const disconnectBeforeUnload = () => {
+      socket?.emit('user-disconnected', currentUser);
+    };
+    window.addEventListener('beforeunload', disconnectBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', disconnectBeforeUnload);
+    };
   }, [socket, currentUser]);
 
   return (

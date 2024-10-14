@@ -139,6 +139,8 @@ const MainComponent = ({
         receiverId={receiverId}
         conversation={conversation}
         setConversation={setConversation}
+        isConnectedUser={isConnectedUser}
+        connectedUsers={connectedUsers}
       />
     </div>
   );

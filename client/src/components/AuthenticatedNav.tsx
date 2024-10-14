@@ -1,9 +1,10 @@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Link } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { User } from '@/types';
 import { IoIosArrowDown } from 'react-icons/io';
 import { validURL } from '@/helpers';
+import { SocketContext } from '@/context';
 
 interface AuthenticatedNavProps {
   currentUser: User | null;
@@ -16,12 +17,14 @@ const AuthenticatedNav = ({
   setCurrentUser,
 }: AuthenticatedNavProps) => {
   const [isSettingsMenu, setIsSettingsMenu] = useState<boolean | null>(null);
+  const socket = useContext(SocketContext);
 
   const handleUserLogOut = (): void => {
     setIsSettingsMenu(false);
     setIsLoggedIn(false);
     setCurrentUser(null);
     localStorage.removeItem('userToken');
+    socket?.emit('user-disconnected', currentUser);
   };
   return (
     <div className="flex items-center space-x-4">

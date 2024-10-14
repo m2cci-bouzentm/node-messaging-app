@@ -81,6 +81,8 @@ interface chatAppProps {
   receiverId: string | null;
   conversation: Conversation | null;
   setConversation: Dispatch<SetStateAction<Conversation | null>>;
+  isConnectedUser: (connectedUsers: User[], user: User) => boolean;
+  connectedUsers: User[];
 }
 
 const ChatComponent = ({
@@ -89,6 +91,8 @@ const ChatComponent = ({
   receiverId,
   conversation,
   setConversation,
+  isConnectedUser,
+  connectedUsers,
 }: chatAppProps) => {
   const messageInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,24 +125,24 @@ const ChatComponent = ({
     }
     // listen to received messages in real time when mounting
     socket?.on('receive-chat-message', (message: Message) => {
-      console.log('receive-chat-message');
+      //TODO fix it not receiving the msg. Cause : The conversation wasn't updated and the useEffect was dependent on it
       //TODO in case of multiple events for the same msg
-      // if(conversation.messages?.includes(message))
-      // {
-      //   return; //! can cause problems ????
-      // }
+      if (conversation.messages?.includes(message)) {
+        return;
+      }
+      console.log('Receiving message');
       conversation.messages?.push(message);
       setConversation({ ...conversation });
       scrollToLastMsg(scrollAresRef.current);
     });
-  }, []);
+  }, [conversation]);
 
   const handleMessageSend: ReactEventHandler = () => {
     const message = messageInputRef.current?.value;
 
     // real time chatting logic :
     if (userToken && currentUser && receiverId && message && conversation) {
-      const tempMsg: Message = {
+      const emittedMsg: Message = {
         id: uuid(), // as temp id just for rendering purposes
         senderId: currentUser?.id,
         receiverId,
@@ -147,11 +151,12 @@ const ChatComponent = ({
         sentOn: new Date(),
       };
 
-      conversation.messages?.push(tempMsg);
+      conversation.messages?.push(emittedMsg);
       setConversation({ ...conversation });
+      console.log('sending message');
 
       // emit send message event to the server
-      socket?.emit('send-chat-message', tempMsg, conversation.id);
+      socket?.emit('send-chat-message', emittedMsg, conversation.id);
     }
 
     // save the new messages into the db logic :
@@ -178,10 +183,17 @@ const ChatComponent = ({
               />
             </Avatar>
             <div>
-              <CardTitle>@{receiver && receiver.username}</CardTitle>
+              <CardTitle className='flex items-center space-x-2'>
+                <div>@{receiver && receiver.username}</div>
+                {receiver && isConnectedUser(connectedUsers, receiver) && (
+                  <div className="online-status h-2 w-2 bg-green-500 text-green-500 rounded-full"></div>
+                )}
+              </CardTitle>
 
               {/* TODO online status */}
-              <CardDescription className="text-sm"> Online</CardDescription>
+              {receiver && isConnectedUser(connectedUsers, receiver) && (
+                <CardDescription className="text-sm"> Online</CardDescription>
+              )}
             </div>
           </div>
         </CardHeader>

@@ -23,6 +23,7 @@ const io = new Server(server, {
     // methods: ['GET', 'POST'],
     credentials: true,
   },
+  cookie: true
 });
 
 // routes
@@ -83,22 +84,27 @@ app.use('/settings', isAuthorized, settingsRouter);
 
 //TODO needs to bo stocked outside of the socket connection, maybe on the db or oh the memory
 const connectedUsers = [];
+
 io.on('connection', (socket) => {
 
   socket.on('user-connected', (user) => {
-    delete user['iat'];
-    delete user['exp'];    
+    
     // send the user the already connected users
     socket.emit('share-connected-user', connectedUsers);
 
-    // add the new user to the list of connected users
-    connectedUsers.push(user);
+    // add the new user to the list of connected users if he isn't  already there
+    const userIndex = connectedUsers.findIndex(u => u.id === user.id);
+    if (userIndex === -1) {
+      connectedUsers.push(user);
+    }
 
     // share to everyone else the updated connected users
     socket.broadcast.emit('share-connected-user', connectedUsers);
   });
 
   socket.on('send-chat-message', (message, room) => {
+    console.log("sending message to room :", room);
+
     socket.to(room).emit('receive-chat-message', message);
   });
 
@@ -106,14 +112,19 @@ io.on('connection', (socket) => {
     socket.join(room);
   });
 
-  socket.on("disconnect", (user) => {
-    if(connectedUsers.includes(user)){
-      delete connectedUsers[user];
+
+  // TODO persist user connection for at least 10secondes before removing it
+  // remove user from connected users when he logs off
+  socket.on("user-disconnected", (user) => {
+    console.log("user disconnected ...");
+
+    const userIndex = connectedUsers.findIndex(u => u.id === user.id);
+
+    if (userIndex !== -1) {
+      connectedUsers.splice(userIndex, 1);
     }
     socket.broadcast.emit('share-connected-user', connectedUsers);
   });
-
-
 });
 
 instrument(io, {
