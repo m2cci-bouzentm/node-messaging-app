@@ -103,6 +103,7 @@ function App() {
     socket?.emit('user-disconnected', currentUser);
   };
 
+  // TODO make it responsive
   return (
     <SocketContext.Provider value={useSocket(isLoggedIn)}>
       <Router>

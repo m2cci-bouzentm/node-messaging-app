@@ -78,6 +78,10 @@ const MainComponent = ({
   const conversations: Conversation[] | null = useConversations(isLoggedIn, userToken);
 
   const [searchedUsers, setSearchedUsers] = useState<User[] | null>(null);
+  const [searchedConversations, setSearchedConversations] = useState<Conversation[] | null>(
+    null
+  );
+
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
@@ -86,7 +90,8 @@ const MainComponent = ({
 
   useEffect(() => {
     setSearchedUsers(users);
-  }, [users]);
+    setSearchedConversations(conversations);
+  }, [users, conversations]);
 
   const handleUserSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const searchedUsers = users?.filter((user) => user.username.includes(e?.currentTarget.value));
@@ -94,6 +99,20 @@ const MainComponent = ({
       setSearchedUsers(searchedUsers);
     }
   };
+  const handleConversationSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const searchedConversations = conversations?.filter((convo) => {
+      const receiver =
+        convo.users &&
+        (convo.users[0].username !== currentUser?.username ? convo.users[0] : convo.users[1]);
+
+      return receiver && receiver.username.includes(e?.currentTarget.value);
+    });
+
+    if (searchedConversations) {
+      setSearchedConversations(searchedConversations);
+    }
+  };
+
 
   // create conversation OR gets an existing one AND set the receiver id
   const handleCreateOrGetExistingConversation = (receiverId: string) => {
@@ -139,20 +158,28 @@ const MainComponent = ({
           <div className="flex p-4 py-2 justify-between items-center user-menu">
             <h6
               onClick={showUsersList}
-              className={"mb-4 font-medium cursor-pointer rounded-lg leading-none p-2 hover:bg-slate-100 " + (isUsersList && "bg-slate-100") }
+              className={
+                'mb-4 font-medium cursor-pointer rounded-lg leading-none p-2 hover:bg-slate-100 ' +
+                (isUsersList && 'bg-slate-100')
+              }
             >
               Users
             </h6>
             <h6
               onClick={showConvoList}
-              className={"mb-4 font-medium cursor-pointer rounded-lg leading-none p-2 hover:bg-slate-100 " + (isConvoList && "bg-slate-100")}
+              className={
+                'mb-4 font-medium cursor-pointer rounded-lg leading-none p-2 hover:bg-slate-100 ' +
+                (isConvoList && 'bg-slate-100')
+              }
             >
               Conversations
             </h6>
 
             {/* TODO add group chats */}
+            {/* TODO add Notifications and number of messages beside the username in the users list when receiving a message*/}
+
             {/* <h6
-              onClick={showConvoList}
+              onClick={showGroupsList}
               className={"mb-4 font-medium cursor-pointer rounded-lg leading-none p-2 hover:bg-slate-100 " + (false && "bg-slate-100")}
             >
               Groups
@@ -201,13 +228,13 @@ const MainComponent = ({
           {isConvoList && (
             <div className="conversations-list p-4 ">
               <Input
-                // onChange={handleConversationSearch}
+                onChange={handleConversationSearch}
                 type="text"
                 placeholder="search for a conversation"
                 className="my-4"
               />
-              {conversations &&
-                conversations.map((convo) => {
+              {searchedConversations &&
+                searchedConversations.map((convo) => {
                   const receiver =
                     convo.users &&
                     (convo.users[0].username !== currentUser?.username

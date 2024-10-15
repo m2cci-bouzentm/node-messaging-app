@@ -44,7 +44,7 @@ const sendMessageToReceiverInRealTime = (
     conversationId: conversation.id,
     sentOn: new Date(),
   };
-
+  
   conversation.messages?.push(emittedMsg);
   setConversation({ ...conversation });
 
@@ -133,6 +133,7 @@ const ChatComponent = ({
     getReceiver(userToken, receiverId, setReceiver);
   }, [receiverId]);
 
+  // listen to receiving message event
   useEffect(() => {
     if (!conversation) {
       return;
@@ -149,7 +150,7 @@ const ChatComponent = ({
       if (conversation.messages?.includes(message)) {
         return;
       }
-      
+
       conversation.messages?.push(message);
       setConversation({ ...conversation });
       scrollToLastMsg(scrollAresRef.current);

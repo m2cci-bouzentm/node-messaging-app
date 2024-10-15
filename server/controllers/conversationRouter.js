@@ -61,14 +61,19 @@ const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, re
         { id: senderId },
         { id: receiverId }
       ],
-    }
+    },
   });
 
+  // create and return the newly created conversation including its users and messages
   const conversation = await prisma.conversation.create({
     data: {
       users: {
         connect: users
       }
+    },
+    include: {
+      users: true,
+      messages: true
     }
   });
 
