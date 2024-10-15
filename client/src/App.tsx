@@ -36,14 +36,16 @@ const useSocket = (isLoggedIn: boolean): Socket | null => {
   return socket;
 };
 
-function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userToken, setUserToken] = useState<string | null>(null);
-  const socket = useSocket(isLoggedIn);
-  const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
-
-  //TODO will be an useAuthentication hook
+interface authenticateUserParams {
+  setCurrentUser: (currentUserState: User | null) => void;
+  setUserToken: (userTokenState: string | null) => void;
+  setIsLoggedIn: (isLoggedInStatus: boolean) => void;
+}
+const authenticateUserOnMount = ({
+  setCurrentUser,
+  setUserToken,
+  setIsLoggedIn,
+}: authenticateUserParams) => {
   useEffect(() => {
     const storedToken = localStorage.getItem('userToken');
     if (!storedToken) {
@@ -67,6 +69,17 @@ function App() {
         console.log(err);
       });
   }, []);
+};
+
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userToken, setUserToken] = useState<string | null>(null);
+  const socket = useSocket(isLoggedIn);
+  const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
+
+  // authenticate user on mount
+  authenticateUserOnMount({ setCurrentUser, setUserToken, setIsLoggedIn });
 
   useEffect(() => {
     if (!socket || !currentUser) {
@@ -79,15 +92,16 @@ function App() {
       setConnectedUsers(connectedUsers);
     });
 
-    const disconnectBeforeUnload = () => {
-      socket?.emit('user-disconnected', currentUser);
-    };
-    window.addEventListener('beforeunload', disconnectBeforeUnload);
+    window.addEventListener('beforeunload', disconnectUser);
 
     return () => {
-      window.removeEventListener('beforeunload', disconnectBeforeUnload);
+      window.removeEventListener('beforeunload', disconnectUser);
     };
   }, [socket, currentUser]);
+
+  const disconnectUser = () => {
+    socket?.emit('user-disconnected', currentUser);
+  };
 
   return (
     <SocketContext.Provider value={useSocket(isLoggedIn)}>

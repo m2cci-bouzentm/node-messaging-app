@@ -26,8 +26,33 @@ import { validURL } from '@/helpers';
 import { SocketContext } from '../context';
 import { v4 as uuid } from 'uuid';
 import CloseIcon from './ui/CloseIcon';
+import { Socket } from 'socket.io-client';
 
-const sendMessage = (
+const sendMessageToReceiverInRealTime = (
+  message: string,
+  receiverId: string,
+  currentUser: User,
+  conversation: Conversation,
+  setConversation: Dispatch<SetStateAction<Conversation | null>>,
+  socket: Socket | null
+) => {
+  const emittedMsg: Message = {
+    id: uuid(), // as temp id just for rendering purposes
+    senderId: currentUser?.id,
+    receiverId,
+    content: message,
+    conversationId: conversation.id,
+    sentOn: new Date(),
+  };
+
+  conversation.messages?.push(emittedMsg);
+  setConversation({ ...conversation });
+
+  // emit send message event to the server
+  socket?.emit('send-chat-message', emittedMsg, conversation.id);
+};
+
+const saveMessage = (
   userToken: string,
   senderId: string,
   receiverId: string,
@@ -71,11 +96,6 @@ const getReceiver = (
     });
 };
 
-const scrollToLastMsg = (scrollAresRef: HTMLDivElement | null): void => {
-  setTimeout(() => {
-    scrollAresRef?.scrollIntoView(false);
-  }, 100);
-};
 interface chatAppProps {
   userToken: string | null;
   currentUser: User | null;
@@ -109,6 +129,7 @@ const ChatComponent = ({
     if (!receiverId) {
       return;
     }
+
     getReceiver(userToken, receiverId, setReceiver);
   }, [receiverId]);
 
@@ -118,22 +139,17 @@ const ChatComponent = ({
     }
 
     scrollToLastMsg(scrollAresRef.current);
+
     // join the room of the conversation whenever it changes
     socket?.emit('join-room', conversation?.id);
-  }, [conversation?.id]);
 
-  useEffect(() => {
-    if (!conversation) {
-      return;
-    }
-    // listen to received messages in real time when mounting
+    // listen to received messages in real time WHEN mounting AND whenever the conversation changes
     socket?.on('receive-chat-message', (message: Message) => {
-      //TODO fix it not receiving the msg. Cause : The conversation wasn't updated and the useEffect was dependent on it
-      //TODO in case of multiple events for the same msg
+      // in case of multiple emitted events for the same msg
       if (conversation.messages?.includes(message)) {
         return;
       }
-      console.log('Receiving message');
+      
       conversation.messages?.push(message);
       setConversation({ ...conversation });
       scrollToLastMsg(scrollAresRef.current);
@@ -143,39 +159,32 @@ const ChatComponent = ({
   const handleMessageSend: ReactEventHandler = () => {
     const message = messageInputRef.current?.value;
 
-    // real time chatting logic :
+    // real time chatting logic AND saving the msg into the db :
     if (userToken && currentUser && receiverId && message && conversation) {
-      const emittedMsg: Message = {
-        id: uuid(), // as temp id just for rendering purposes
-        senderId: currentUser?.id,
+      sendMessageToReceiverInRealTime(
+        message,
         receiverId,
-        content: message,
-        conversationId: conversation.id,
-        sentOn: new Date(),
-      };
-
-      conversation.messages?.push(emittedMsg);
-      setConversation({ ...conversation });
-      console.log('sending message');
-
-      // emit send message event to the server
-      socket?.emit('send-chat-message', emittedMsg, conversation.id);
-    }
-
-    // save the new messages into the db logic :
-    if (userToken && currentUser && receiverId && message && conversation) {
-      sendMessage(userToken, currentUser.id, receiverId, message, conversation.id);
+        currentUser,
+        conversation,
+        setConversation,
+        socket
+      );
+      // save the new messages into the db logic :
+      saveMessage(userToken, currentUser.id, receiverId, message, conversation.id);
       messageInputRef.current.value = '';
+
+      scrollToLastMsg(scrollAresRef.current);
     }
-
-    scrollToLastMsg(scrollAresRef.current);
   };
-
   const handleCloseChat = (): void => {
     setConversation(null);
     setReceiverId(null);
   };
-
+  const scrollToLastMsg = (scrollAresRef: HTMLDivElement | null): void => {
+    setTimeout(() => {
+      scrollAresRef?.scrollIntoView(false);
+    }, 100);
+  };
   return (
     receiverId && (
       <Card className="w-[60%] h-[90%] transition-all ">

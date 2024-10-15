@@ -45,7 +45,7 @@ const MainComponent = ({
   currentUser,
   userToken,
 }: MainComponentProps) => {
-  const users = useUsers(isLoggedIn, userToken);
+  const users: User[] | null = useUsers(isLoggedIn, userToken);
   const [searchedUsers, setSearchedUsers] = useState<User[] | null>(null);
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -61,7 +61,7 @@ const MainComponent = ({
     }
   };
 
-  // create conversation OR gets an existing one
+  // create conversation OR gets an existing one AND the receiver id
   const handleCreateOrGetExistingConversation = (receiverId: string) => {
     setReceiverId(receiverId);
 
@@ -89,7 +89,7 @@ const MainComponent = ({
   const isConnectedUser = (connectedUsers: User[], checkedUser: User): boolean => {
     return connectedUsers.some((user) => user.id === checkedUser.id);
   };
-  
+
   return (
     <div className="flex h-[600px] items-start justify-between">
       {/* TODO add old conversations list */}

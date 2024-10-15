@@ -82,7 +82,7 @@ app.use('/users', isAuthorized, usersRouter);
 app.use('/conversation', isAuthorized, conversationRouter);
 app.use('/settings', isAuthorized, settingsRouter);
 
-//TODO needs to bo stocked outside of the socket connection, maybe on the db or oh the memory
+//TODO needs to bo stocked outside of the socket connection, maybe on the db
 const connectedUsers = [];
 
 io.on('connection', (socket) => {
