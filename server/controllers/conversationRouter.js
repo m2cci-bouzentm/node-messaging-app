@@ -49,11 +49,11 @@ const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, re
       messages: true
     }
   });
-  
+
   if (conversationBetweenTwoUsers.length > 0) {
     return res.json(conversationBetweenTwoUsers[0]);
   }
-  
+
   // create new conversation
   const users = await prisma.user.findMany({
     where: {
@@ -75,14 +75,36 @@ const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, re
   res.json(conversation);
 })
 
-// const allConversations = await prisma.conversation.findMany({
-//   include: {
-//     users: true,
-//     messages: true
-//   }
-// })
+const getAllConversationsByUserId = asyncHandle(async (req, res, next) => {
+
+  try {
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        users: {
+          some: {
+            id: req.currentUser.id
+          }
+        },
+      },
+      include: {
+        users: true,
+        messages: true
+      }
+    });
+
+
+    res.json(conversations)
+  } catch (error) {
+    console.log(error);
+
+  }
+
+
+})
 
 
 module.exports = {
-  createOrGetIfExistConversationBetweenTwoUsers
+  createOrGetIfExistConversationBetweenTwoUsers,
+  getAllConversationsByUserId,
+
 }
