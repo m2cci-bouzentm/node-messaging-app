@@ -14,6 +14,8 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dispatch,
+  FormEvent,
+  FormEventHandler,
   ReactEventHandler,
   SetStateAction,
   useContext,
@@ -27,6 +29,7 @@ import { SocketContext } from '../context';
 import { v4 as uuid } from 'uuid';
 import CloseIcon from './ui/CloseIcon';
 import { Socket } from 'socket.io-client';
+import { IoImageOutline } from 'react-icons/io5';
 
 const sendMessageToReceiverInRealTime = (
   message: string,
@@ -39,12 +42,13 @@ const sendMessageToReceiverInRealTime = (
   const emittedMsg: Message = {
     id: uuid(), // as temp id just for rendering purposes
     senderId: currentUser?.id,
+    sender: currentUser,
     receiverId,
     content: message,
     conversationId: conversation.id,
     sentOn: new Date(),
   };
-  
+
   conversation.messages?.push(emittedMsg);
   setConversation({ ...conversation });
 
@@ -186,6 +190,12 @@ const ChatComponent = ({
       scrollAresRef?.scrollIntoView(false);
     }, 100);
   };
+  const handleImageSend: FormEventHandler = (e: FormEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    if (target.files) {
+      console.log(target.files[0]);
+    }
+  };
   return (
     receiverId && (
       <Card className="w-[60%] h-[90%] transition-all ">
@@ -221,6 +231,7 @@ const ChatComponent = ({
         <Separator className="mb-4" />
 
         {/* TODO send pictures and host them */}
+        {/* TODO add remove a conversation from the ui, and the user from this conversation */}
         <ScrollArea className="h-[65%] scrollable">
           <CardContent ref={scrollAresRef} className="space-y-8 text-sm flex flex-col">
             {conversation?.messages?.map((message) => (
@@ -234,19 +245,31 @@ const ChatComponent = ({
           </CardContent>
         </ScrollArea>
 
-        <CardFooter className="space-x-4 py-4 z-10">
-          <Input
-            ref={messageInputRef}
-            onKeyDown={(e) =>
-              e.code === 'Enter' || e.code === 'NumpadEnter' ? handleMessageSend(e) : null
-            }
-            type="message"
-            className="z-10 h-12"
-            placeholder="Type a message..."
-          />
-          <Button type="submit" onClick={handleMessageSend}>
-            Send
-          </Button>
+        <CardFooter className="w-full p-2 lg:p-6 py-4 justify-between items-center z-10">
+          <div className="relative flex items-center flex-none">
+            <Input
+              onInputCapture={handleImageSend}
+              accept="image/*,.pdf"
+              type="file"
+              className="absolute w-10 h-10 z-10 opacity-0 cursor-pointer"
+            />
+            <IoImageOutline className="text-4xl text-main z-0 absolute" />
+          </div>
+
+          <div className="space-x-4 w-[90%] flex items-center ">
+            <Input
+              ref={messageInputRef}
+              onKeyDown={(e) =>
+                e.code === 'Enter' || e.code === 'NumpadEnter' ? handleMessageSend(e) : null
+              }
+              type="text"
+              className="z-10 h-12"
+              placeholder="Type a message..."
+            />
+            <Button type="submit" onClick={handleMessageSend}>
+              Send
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     )

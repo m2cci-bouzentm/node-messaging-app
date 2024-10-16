@@ -16,6 +16,7 @@ import { User } from './types';
 
 import io, { Socket } from 'socket.io-client';
 import { SocketContext } from './context';
+import { NotificationsProvider } from '@toolpad/core/useNotifications';
 
 const useSocket = (isLoggedIn: boolean): Socket | null => {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -41,7 +42,7 @@ interface authenticateUserParams {
   setUserToken: (userTokenState: string | null) => void;
   setIsLoggedIn: (isLoggedInStatus: boolean) => void;
 }
-const authenticateUserOnMount = ({
+const useAuthenticateUserOnMount = ({
   setCurrentUser,
   setUserToken,
   setIsLoggedIn,
@@ -67,6 +68,7 @@ const authenticateUserOnMount = ({
       .catch((err) => {
         console.log('An error occurred when verifying user logging...');
         console.log(err);
+        localStorage.removeItem("userToken");
       });
   }, []);
 };
@@ -79,7 +81,7 @@ function App() {
   const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
 
   // authenticate user on mount
-  authenticateUserOnMount({ setCurrentUser, setUserToken, setIsLoggedIn });
+  useAuthenticateUserOnMount({ setCurrentUser, setUserToken, setIsLoggedIn });
 
   useEffect(() => {
     if (!socket || !currentUser) {
@@ -88,7 +90,7 @@ function App() {
 
     socket?.emit('user-connected', currentUser);
     socket?.on('share-connected-user', (connectedUsers) => {
-      console.log(connectedUsers);
+      console.log("connectedUsers", connectedUsers);
       setConnectedUsers(connectedUsers);
     });
 
@@ -129,63 +131,65 @@ function App() {
           </div>
         </NavigationMenu>
 
-        <main className="w-[90%] xl:w-[60%] flex flex-col m-auto text-main">
-          <Routes>
-            {isLoggedIn ? (
-              // authenticated_only_routes
-              <>
-                <Route
-                  path="/"
-                  element={
-                    <MainComponent
-                      connectedUsers={connectedUsers}
-                      isLoggedIn={isLoggedIn}
-                      currentUser={currentUser}
-                      userToken={userToken}
-                    />
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <SettingsComponent
-                      currentUser={currentUser}
-                      userToken={userToken}
-                      setUserToken={setUserToken}
-                      setCurrentUser={setCurrentUser}
-                    />
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" />} />
-              </>
-            ) : (
-              // no_authenticated_routes
-              <>
-                <Route
-                  path="/login"
-                  element={
-                    <LoginComponent
-                      setUserToken={setUserToken}
-                      setCurrentUser={setCurrentUser}
-                      setIsLoggedIn={setIsLoggedIn}
-                    />
-                  }
-                />
-                <Route
-                  path="/signup"
-                  element={
-                    <SignUpComponent
-                      setUserToken={setUserToken}
-                      setCurrentUser={setCurrentUser}
-                      setIsLoggedIn={setIsLoggedIn}
-                    />
-                  }
-                />
-                <Route path="*" element={<Navigate to="/login" />} />
-              </>
-            )}
-          </Routes>
-        </main>
+        <NotificationsProvider>
+          <main className="w-[90%] xl:w-[60%] flex flex-col m-auto text-main">
+            <Routes>
+              {isLoggedIn ? (
+                // authenticated_only_routes
+                <>
+                  <Route
+                    path="/"
+                    element={
+                      <MainComponent
+                        connectedUsers={connectedUsers}
+                        isLoggedIn={isLoggedIn}
+                        currentUser={currentUser}
+                        userToken={userToken}
+                      />
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <SettingsComponent
+                        currentUser={currentUser}
+                        userToken={userToken}
+                        setUserToken={setUserToken}
+                        setCurrentUser={setCurrentUser}
+                      />
+                    }
+                  />
+                  <Route path="*" element={<Navigate to="/" />} />
+                </>
+              ) : (
+                // no_authenticated_routes
+                <>
+                  <Route
+                    path="/login"
+                    element={
+                      <LoginComponent
+                        setUserToken={setUserToken}
+                        setCurrentUser={setCurrentUser}
+                        setIsLoggedIn={setIsLoggedIn}
+                      />
+                    }
+                  />
+                  <Route
+                    path="/signup"
+                    element={
+                      <SignUpComponent
+                        setUserToken={setUserToken}
+                        setCurrentUser={setCurrentUser}
+                        setIsLoggedIn={setIsLoggedIn}
+                      />
+                    }
+                  />
+                  <Route path="*" element={<Navigate to="/login" />} />
+                </>
+              )}
+            </Routes>
+          </main>
+        </NotificationsProvider>
 
         <footer className="py-[100px]"></footer>
       </Router>

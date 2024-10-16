@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import ChatComponent from './ChatComponent';
-import { Conversation, User } from '@/types';
+import { Conversation, Message, User } from '@/types';
 import { Input } from './ui/input';
 import { Avatar, AvatarImage } from './ui/avatar';
 import { validURL } from '@/helpers';
+import { useNotifications } from '@toolpad/core/useNotifications';
+import { SocketContext } from '@/context';
 
 const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null => {
   const [users, setUsers] = useState<User[] | null>(null);
@@ -78,9 +80,7 @@ const MainComponent = ({
   const conversations: Conversation[] | null = useConversations(isLoggedIn, userToken);
 
   const [searchedUsers, setSearchedUsers] = useState<User[] | null>(null);
-  const [searchedConversations, setSearchedConversations] = useState<Conversation[] | null>(
-    null
-  );
+  const [searchedConversations, setSearchedConversations] = useState<Conversation[] | null>(null);
 
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -88,10 +88,28 @@ const MainComponent = ({
   const [isUsersList, setIsUsersList] = useState<boolean>(true);
   const [isConvoList, setIsConvoList] = useState<boolean>(false);
 
+  const socket = useContext(SocketContext);
+
+  const notifications = useNotifications();
+
   useEffect(() => {
     setSearchedUsers(users);
     setSearchedConversations(conversations);
   }, [users, conversations]);
+
+  useEffect(() => {
+    // notify the user when he receives a message
+
+    // join a secret room to receive messages notifications
+    socket?.emit('join-room', currentUser?.id);
+
+    // listen to received messages notifications
+    socket?.on('notify-receive-chat-message', (message: Message) => {
+      notifications.show(`${message.sender?.username}: ${message.content}`, {
+        autoHideDuration: 2500,
+      });
+    });
+  }, []);
 
   const handleUserSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const searchedUsers = users?.filter((user) => user.username.includes(e?.currentTarget.value));
@@ -112,7 +130,6 @@ const MainComponent = ({
       setSearchedConversations(searchedConversations);
     }
   };
-
 
   // create conversation OR gets an existing one AND set the receiver id
   const handleCreateOrGetExistingConversation = (receiverId: string) => {
@@ -176,7 +193,6 @@ const MainComponent = ({
             </h6>
 
             {/* TODO add group chats */}
-            {/* TODO add Notifications and number of messages beside the username in the users list when receiving a message*/}
 
             {/* <h6
               onClick={showGroupsList}
