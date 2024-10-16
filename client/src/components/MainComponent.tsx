@@ -1,5 +1,6 @@
-import { useContext, useEffect, useState } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 
+import { Dispatch, SetStateAction, useContext, useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import ChatComponent from './ChatComponent';
@@ -36,7 +37,11 @@ const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null 
   return users;
 };
 
-const useConversations = (isLoggedIn: boolean, userToken: string | null): Conversation[] | null => {
+interface useConversationsProps {
+  conversations: Conversation[] | null;
+  setConversations: Dispatch<SetStateAction<Conversation[] | null>>;
+}
+const useConversations = (isLoggedIn: boolean, userToken: string | null): useConversationsProps => {
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
 
   useEffect(() => {
@@ -62,7 +67,7 @@ const useConversations = (isLoggedIn: boolean, userToken: string | null): Conver
       });
   }, [isLoggedIn]);
 
-  return conversations;
+  return { conversations, setConversations };
 };
 
 interface MainComponentProps {
@@ -78,7 +83,10 @@ const MainComponent = ({
   userToken,
 }: MainComponentProps) => {
   const users: User[] | null = useUsers(isLoggedIn, userToken);
-  const conversations: Conversation[] | null = useConversations(isLoggedIn, userToken);
+  const { conversations, setConversations }: useConversationsProps = useConversations(
+    isLoggedIn,
+    userToken
+  );
 
   const [searchedUsers, setSearchedUsers] = useState<User[] | null>(null);
   const [searchedConversations, setSearchedConversations] = useState<Conversation[] | null>(null);
@@ -129,8 +137,11 @@ const MainComponent = ({
     })
       .then((res) => res.json())
       .then((conversation) => {
-        console.log(conversation);
         setConversation(conversation);
+        if (conversations) {
+          const updatedConversations = conversations.filter((conv) => conv.id !== conversation.id);
+          setConversations([...updatedConversations, conversation]);
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -262,7 +273,13 @@ const MainComponent = ({
                   return (
                     <ConversationListItemComponent
                       key={convo.id}
+                      currentUser={currentUser}
+                      conversationId={convo.id}
+                      conversations={conversations}
+                      setConversations={setConversations}
+                      userToken={userToken}
                       receiver={receiver}
+                      setReceiverId={setReceiverId}
                       connectedUsers={connectedUsers}
                       isConnectedUser={isConnectedUser}
                       handleCreateOrGetExistingConversation={handleCreateOrGetExistingConversation}

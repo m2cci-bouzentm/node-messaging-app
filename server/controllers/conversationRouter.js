@@ -78,7 +78,7 @@ const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, re
   });
 
   res.json(conversation);
-})
+});
 
 const getAllConversationsByUserId = asyncHandle(async (req, res, next) => {
 
@@ -105,11 +105,39 @@ const getAllConversationsByUserId = asyncHandle(async (req, res, next) => {
   }
 
 
-})
+});
 
+const removeUserFromConversation = asyncHandle(async (req, res, next) => {
+  const {conversationId, userId} = req.body;
+  const conversation = await prisma.conversation.update({
+    where: {
+      id: conversationId,
+      users: {
+        some: {
+          id: userId
+        }
+      }
+    },
+    data: {
+      users: {
+        disconnect: {
+          id: userId
+        }
+      }
+    },
+    include: {
+      users: true,
+      messages: true
+    }
+  })
+
+  
+  res.json(conversation);
+});
 
 module.exports = {
   createOrGetIfExistConversationBetweenTwoUsers,
   getAllConversationsByUserId,
+  removeUserFromConversation,
 
 }

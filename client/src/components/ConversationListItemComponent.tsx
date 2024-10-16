@@ -1,19 +1,31 @@
-import { ReactEventHandler, useState } from 'react';
+import { ReactEventHandler, SetStateAction, useState } from 'react';
 import { Avatar, AvatarImage } from './ui/avatar';
 import { validURL } from '@/helpers';
 import { Separator } from './ui/separator';
-import {  User } from '@/types';
+import { Conversation, User } from '@/types';
 import { Button } from './ui/button';
 
 interface ConversationListItemComponentProps {
+  currentUser: User | null;
+  conversationId: string | null;
+  conversations: Conversation[] | null;
+  setConversations: React.Dispatch<SetStateAction<Conversation[] | null>>;
+  userToken: string | null;
   receiver: User | null;
+  setReceiverId: React.Dispatch<SetStateAction<string | null>>;
   connectedUsers: User[];
   isConnectedUser: (connectedUsers: User[], checkedUser: User) => boolean;
   handleCreateOrGetExistingConversation: (receiverId: string) => void;
 }
 
 const ConversationListItemComponent = ({
+  currentUser,
+  conversationId,
+  conversations,
+  setConversations,
+  userToken,
   receiver,
+  setReceiverId,
   connectedUsers,
   isConnectedUser,
   handleCreateOrGetExistingConversation,
@@ -26,7 +38,31 @@ const ConversationListItemComponent = ({
   };
   const handleConversationDelete: ReactEventHandler = (e) => {
     e.stopPropagation();
+    
+    if (!conversationId || !currentUser) {
+      return;
+    }
+
     setIsConversationSettings(false);
+    fetch(import.meta.env.VITE_API_BASE_URL + '/conversation/twoUsers', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+        'Content-Type': 'Application/json',
+      },
+      body: JSON.stringify({ conversationId, userId: currentUser?.id }),
+    })
+      .then((res) => res.json())
+      .then((conversation) => {
+        if (conversations) {
+          const updatedConversations = conversations.filter((conv) => conv.id !== conversation.id);
+          setConversations(updatedConversations);
+          setReceiverId(null);
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   return (

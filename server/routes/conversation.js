@@ -9,6 +9,10 @@ router.post("/twoUsers", conversationRouter.createOrGetIfExistConversationBetwee
 
 
 
+router.put("/twoUsers", conversationRouter.removeUserFromConversation);
+
+
+
 
 
 
