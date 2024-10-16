@@ -45,7 +45,7 @@ const AuthenticatedNav = ({
         />
 
         {isSettingsMenu && (
-          <div className="comment-menu absolute z-20 top-[25px] right-0 flex flex-col items-center text-sm rounded-lg bg-slate-50 ">
+          <div className="settings-menu absolute z-20 top-[25px] right-0 flex flex-col items-center text-sm rounded-lg bg-slate-50 ">
             <Link
               onClick={() => setIsSettingsMenu(false)}
               to="/settings"

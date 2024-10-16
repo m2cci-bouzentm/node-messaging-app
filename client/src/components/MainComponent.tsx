@@ -9,6 +9,7 @@ import { Avatar, AvatarImage } from './ui/avatar';
 import { validURL } from '@/helpers';
 import { useNotifications } from '@toolpad/core/useNotifications';
 import { SocketContext } from '@/context';
+import ConversationListItemComponent from './ConversationListItemComponent';
 
 const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null => {
   const [users, setUsers] = useState<User[] | null>(null);
@@ -84,7 +85,6 @@ const MainComponent = ({
 
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
-
   const [isUsersList, setIsUsersList] = useState<boolean>(true);
   const [isConvoList, setIsConvoList] = useState<boolean>(false);
 
@@ -112,26 +112,6 @@ const MainComponent = ({
     });
   }, []);
 
-  const handleUserSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const searchedUsers = users?.filter((user) => user.username.includes(e?.currentTarget.value));
-    if (searchedUsers) {
-      setSearchedUsers(searchedUsers);
-    }
-  };
-  const handleConversationSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const searchedConversations = conversations?.filter((convo) => {
-      const receiver =
-        convo.users &&
-        (convo.users[0].username !== currentUser?.username ? convo.users[0] : convo.users[1]);
-
-      return receiver && receiver.username.includes(e?.currentTarget.value);
-    });
-
-    if (searchedConversations) {
-      setSearchedConversations(searchedConversations);
-    }
-  };
-
   // create conversation OR gets an existing one AND set the receiver id
   const handleCreateOrGetExistingConversation = (receiverId: string) => {
     setReceiverId(receiverId);
@@ -157,6 +137,27 @@ const MainComponent = ({
       });
   };
 
+  // event handlers
+  const handleUserSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const searchedUsers = users?.filter((user) => user.username.includes(e?.currentTarget.value));
+    if (searchedUsers) {
+      setSearchedUsers(searchedUsers);
+    }
+  };
+  const handleConversationSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const searchedConversations = conversations?.filter((convo) => {
+      const receiver =
+        convo.users &&
+        (convo.users[0].username !== currentUser?.username ? convo.users[0] : convo.users[1]);
+
+      return receiver && receiver.username.includes(e?.currentTarget.value);
+    });
+
+    if (searchedConversations) {
+      setSearchedConversations(searchedConversations);
+    }
+  };
+
   const isConnectedUser = (connectedUsers: User[], checkedUser: User): boolean => {
     return connectedUsers.some((user) => user.id === checkedUser.id);
   };
@@ -169,11 +170,13 @@ const MainComponent = ({
     setIsUsersList(false);
     setIsConvoList(true);
   };
+
+  /* TODO add functionality : remove a conversation from the ui, and the user from this conversation */
   return (
     <div className="flex h-[600px] items-start justify-between">
       <aside className="w-[30%] h-[75%]">
         <ScrollArea className="h-full w-full rounded-md border">
-          <div className="flex p-4 py-2 justify-between items-center user-menu">
+          <div className="aside-menu flex p-4 py-2 justify-between items-center">
             <h6
               onClick={showUsersList}
               className={
@@ -203,7 +206,6 @@ const MainComponent = ({
             </h6> */}
           </div>
           <Separator />
-
           {isUsersList && (
             <div className="users-list p-4 ">
               <Input
@@ -241,7 +243,6 @@ const MainComponent = ({
                 ))}
             </div>
           )}
-
           {isConvoList && (
             <div className="conversations-list p-4 ">
               <Input
@@ -253,35 +254,19 @@ const MainComponent = ({
               {searchedConversations &&
                 searchedConversations.map((convo) => {
                   const receiver =
-                    convo.users &&
-                    (convo.users[0].username !== currentUser?.username
-                      ? convo.users[0]
-                      : convo.users[1]);
+                    (convo.users &&
+                      (convo.users[0].username !== currentUser?.username
+                        ? convo.users[0]
+                        : convo.users[1])) ||
+                    null;
                   return (
-                    <div
+                    <ConversationListItemComponent
                       key={convo.id}
-                      onClick={() => receiver && handleCreateOrGetExistingConversation(receiver.id)}
-                      className="cursor-pointer hover:bg-hover py-1"
-                    >
-                      <div className="flex space-x-2 items-center py-1">
-                        <Avatar>
-                          <AvatarImage
-                            src={
-                              receiver && validURL(receiver.avatarUrl || '')
-                                ? receiver.avatarUrl
-                                : 'https://github.com/shadcn.png'
-                            }
-                          />
-                        </Avatar>
-                        <div className="flex w-full justify-between items-center">
-                          <div className="text-sm p-4">{receiver && receiver.username}</div>
-                          {receiver && isConnectedUser(connectedUsers, receiver) && (
-                            <div className="online-status h-2 w-2 bg-green-500 text-green-500 rounded-full"></div>
-                          )}
-                        </div>
-                      </div>
-                      <Separator />
-                    </div>
+                      receiver={receiver}
+                      connectedUsers={connectedUsers}
+                      isConnectedUser={isConnectedUser}
+                      handleCreateOrGetExistingConversation={handleCreateOrGetExistingConversation}
+                    />
                   );
                 })}
             </div>

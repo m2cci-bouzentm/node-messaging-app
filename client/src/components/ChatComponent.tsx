@@ -259,7 +259,6 @@ const ChatComponent = ({
 
         <Separator className="mb-4" />
 
-        {/* TODO add remove a conversation from the ui, and the user from this conversation */}
         <ScrollArea className="h-[65%] scrollable">
           <CardContent ref={scrollAresRef} className="space-y-8 text-sm flex flex-col">
             {conversation?.messages?.map((message) => (
