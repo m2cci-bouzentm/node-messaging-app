@@ -7,11 +7,11 @@ const createError = require('http-errors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cloudinary = require('cloudinary').v2;
 
 const { Server } = require('socket.io');
 const { instrument } = require('@socket.io/admin-ui');
-
-const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -20,7 +20,6 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: ['http://localhost:5173', 'https://admin.socket.io'],
-    // methods: ['GET', 'POST'],
     credentials: true,
   },
   cookie: true
@@ -39,7 +38,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
+
+// custom middlewares to verify and authorize user
 const verifyUser = (req, res, next) => {
   const bearerHeader = req.headers['authorization'];
 
@@ -62,15 +68,12 @@ const verifyUser = (req, res, next) => {
     next();
   });
 }
-
 const isAuthorized = (req, res, next) => {
   if (req.currentUser === null) {
     return next(new Error("User not logged in, hence not authorized"));
   }
   next()
 }
-
-
 
 
 
@@ -82,29 +85,34 @@ app.use('/users', isAuthorized, usersRouter);
 app.use('/conversation', isAuthorized, conversationRouter);
 app.use('/settings', isAuthorized, settingsRouter);
 
-//TODO needs to bo stocked outside of the socket connection, maybe on the db
-const connectedUsers = [];
 
+
+const connectedUsersStore = [];
+
+// TODO extract eventHandlers to their own folder inside the controllers folder
 io.on('connection', (socket) => {
 
   socket.on('user-connected', (user) => {
 
     // send the user the already connected users
-    socket.emit('share-connected-user', connectedUsers);
+    socket.emit('share-connected-user', connectedUsersStore);
 
     // add the new user to the list of connected users if he isn't  already there
-    const userIndex = connectedUsers.findIndex(u => u.id === user.id);
+    const userIndex = connectedUsersStore.findIndex(u => u.id === user.id);
     if (userIndex === -1) {
-      connectedUsers.push(user);
+      connectedUsersStore.push(user);
     }
 
     // share to everyone else the updated connected users
-    socket.broadcast.emit('share-connected-user', connectedUsers);
+    socket.broadcast.emit('share-connected-user', connectedUsersStore);
   });
 
   socket.on('send-chat-message', (message, room) => {
     console.log("sending message to room :", room);
 
+    // emit notification to the receiver only
+    socket.to(message.receiverId).emit('notify-receive-chat-message', message);
+    // emit the message to the conversation between the two users aka sender/receiver
     socket.to(room).emit('receive-chat-message', message);
   });
 
@@ -117,27 +125,28 @@ io.on('connection', (socket) => {
   socket.on("user-disconnected", (user) => {
     console.log("user disconnected ...");
 
-    const userIndex = connectedUsers.findIndex(u => u.id === user.id);
+    const userIndex = connectedUsersStore.findIndex(u => u.id === user.id);
     const disconnectedUser = user;
 
     if (userIndex !== -1) {
-      connectedUsers.splice(userIndex, 1);
+      connectedUsersStore.splice(userIndex, 1);
     }
 
     // persist user online status for at least 5 secondes before removing it
     setTimeout(() => {
       // if the disconnectedUser hasn't reconnected in 5sec, then he is disconnected
-      if (!(connectedUsers.some(u => u.id === disconnectedUser.id))) {
-        socket.broadcast.emit('share-connected-user', connectedUsers);
+      if (!(connectedUsersStore.some(u => u.id === disconnectedUser.id))) {
+        socket.broadcast.emit('share-connected-user', connectedUsersStore);
       }
     }, 5000)
   });
 
 });
 
-instrument(io, {
-  auth: false,
-});
+// use socket io admin dashboard
+// instrument(io, {
+//   auth: false,
+// });
 
 
 
@@ -148,6 +157,8 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (error, req, res, next) {
+  console.log(error);
+  
   res.status(error.status || 500);
   res.json(error);
 });

@@ -68,7 +68,7 @@ const useAuthenticateUserOnMount = ({
       .catch((err) => {
         console.log('An error occurred when verifying user logging...');
         console.log(err);
-        localStorage.removeItem("userToken");
+        localStorage.removeItem('userToken');
       });
   }, []);
 };
@@ -90,7 +90,7 @@ function App() {
 
     socket?.emit('user-connected', currentUser);
     socket?.on('share-connected-user', (connectedUsers) => {
-      console.log("connectedUsers", connectedUsers);
+      console.log('connectedUsers', connectedUsers);
       setConnectedUsers(connectedUsers);
     });
 
@@ -106,6 +106,8 @@ function App() {
   };
 
   // TODO make it responsive
+  /* TODO make pictures look bigger in the chat */
+
   return (
     <SocketContext.Provider value={useSocket(isLoggedIn)}>
       <Router>

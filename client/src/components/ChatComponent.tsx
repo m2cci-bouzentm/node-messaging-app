@@ -32,7 +32,7 @@ import { Socket } from 'socket.io-client';
 import { IoImageOutline } from 'react-icons/io5';
 
 const sendMessageToReceiverInRealTime = (
-  message: string,
+  messageContent: string,
   receiverId: string,
   currentUser: User,
   conversation: Conversation,
@@ -44,7 +44,7 @@ const sendMessageToReceiverInRealTime = (
     senderId: currentUser?.id,
     sender: currentUser,
     receiverId,
-    content: message,
+    content: messageContent,
     conversationId: conversation.id,
     sentOn: new Date(),
   };
@@ -122,11 +122,10 @@ const ChatComponent = ({
   connectedUsers,
 }: chatAppProps) => {
   const messageInputRef = useRef<HTMLInputElement>(null);
+  const scrollAresRef = useRef<HTMLDivElement | null>(null);
 
   const [receiver, setReceiver] = useState<User | null>(null);
   const socket = useContext(SocketContext);
-
-  const scrollAresRef = useRef<HTMLDivElement | null>(null);
 
   // get conversation and receiver information
   useEffect(() => {
@@ -192,8 +191,38 @@ const ChatComponent = ({
   };
   const handleImageSend: FormEventHandler = (e: FormEvent<HTMLInputElement>) => {
     const target = e.target as HTMLInputElement;
-    if (target.files) {
-      console.log(target.files[0]);
+
+    if (userToken && currentUser && receiverId && conversation) {
+      if (!target.files) return;
+      const file = target.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name);
+      formData.append('receiverId', receiverId);
+      formData.append('conversationId', conversation.id);
+
+      // send file to the server to upload it THEN send it as a message
+      fetch(import.meta.env.VITE_API_BASE_URL + '/users/message/uploadFile', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then((message) => {
+          sendMessageToReceiverInRealTime(
+            message.content,
+            receiverId,
+            currentUser,
+            conversation,
+            setConversation,
+            socket
+          );
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     }
   };
   return (
@@ -230,7 +259,6 @@ const ChatComponent = ({
 
         <Separator className="mb-4" />
 
-        {/* TODO send pictures and host them */}
         {/* TODO add remove a conversation from the ui, and the user from this conversation */}
         <ScrollArea className="h-[65%] scrollable">
           <CardContent ref={scrollAresRef} className="space-y-8 text-sm flex flex-col">

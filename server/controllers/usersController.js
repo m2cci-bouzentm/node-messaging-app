@@ -1,8 +1,15 @@
 require('dotenv').config();
 
+const { Readable } = require('stream');
+
 const { PrismaClient } = require('@prisma/client');
 const asyncHandle = require('express-async-handler');
 const { body, validationResult } = require('express-validator');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage, limits: '2MB', preservePath: true });
 
 const prisma = new PrismaClient();
 
@@ -76,9 +83,39 @@ const sendMessage = [
         conversationId,
       }
     });
-    
+
     res.json(message);
   })];
+
+
+const handleFileUpload = [
+  upload.single('file'),
+  asyncHandle(async (req, res, next) => {
+
+    const { receiverId, conversationId } = req.body;
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      async (error, uploadRes) => {
+        if (error) {
+          console.log('Error uploading file', error);
+          return next(error);
+        }
+
+        const fileUrl = uploadRes.secure_url;
+        const message = await prisma.message.create({
+          data: {
+            content: fileUrl,
+            senderId: req.currentUser.id,
+            receiverId,
+            conversationId
+          },
+        });
+        res.json(message);
+      });
+
+    Readable.from(req.file.buffer).pipe(uploadStream);
+  })
+]
 
 
 
@@ -88,5 +125,6 @@ module.exports = {
   getUsers,
   getUserById,
   sendMessage,
+  handleFileUpload,
 
 }

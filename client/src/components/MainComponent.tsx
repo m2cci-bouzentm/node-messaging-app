@@ -105,7 +105,8 @@ const MainComponent = ({
 
     // listen to received messages notifications
     socket?.on('notify-receive-chat-message', (message: Message) => {
-      notifications.show(`${message.sender?.username}: ${message.content}`, {
+      const notinMsg = validURL(message.content) ? 'sent you an image' : message.content;
+      notifications.show(`${message.sender?.username}: ${notinMsg}`, {
         autoHideDuration: 2500,
       });
     });

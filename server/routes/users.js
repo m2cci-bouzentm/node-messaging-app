@@ -7,7 +7,10 @@ const usersController = require('../controllers/usersController')
 router.get("/", usersController.getUsers);
 router.get("/:userId", usersController.getUserById);
 
+
+router.post("/message/uploadFIle", usersController.handleFileUpload);
 router.post("/message/:senderId", usersController.sendMessage);
+
 
 
 
