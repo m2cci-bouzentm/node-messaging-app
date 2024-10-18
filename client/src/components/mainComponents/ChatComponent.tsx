@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
   Card,
   CardContent,
@@ -7,8 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from './ui/button';
-import MessageItem from './MessageItem';
+import { Button } from '../ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,13 +23,17 @@ import {
   useRef,
   useState,
 } from 'react';
+import CloseIcon from '../ui/CloseIcon';
+import { IoImageOutline } from 'react-icons/io5';
+
+import MessageItem from './MessageItem';
+
+import { SocketContext } from '../../context';
+import { Socket } from 'socket.io-client';
+
 import { Conversation, Message, User } from '@/types';
 import { validURL } from '@/helpers';
-import { SocketContext } from '../context';
 import { v4 as uuid } from 'uuid';
-import CloseIcon from './ui/CloseIcon';
-import { Socket } from 'socket.io-client';
-import { IoImageOutline } from 'react-icons/io5';
 
 const sendMessageToReceiverInRealTime = (
   messageContent: string,
@@ -100,7 +104,7 @@ const getReceiver = (
     });
 };
 
-interface chatAppProps {
+interface chatComponentProps {
   userToken: string | null;
   currentUser: User | null;
   receiverId: string | null;
@@ -109,6 +113,12 @@ interface chatAppProps {
   setConversation: Dispatch<SetStateAction<Conversation | null>>;
   isConnectedUser: (connectedUsers: User[], user: User) => boolean;
   connectedUsers: User[];
+  conversations: Conversation[] | null;
+  setConversations: Dispatch<SetStateAction<Conversation[] | null>>;
+  moveConversationToTop: (
+    conversations: Conversation[] | null,
+    conversation: Conversation | null
+  ) => Conversation[] | null;
 }
 
 const ChatComponent = ({
@@ -120,7 +130,10 @@ const ChatComponent = ({
   setConversation,
   isConnectedUser,
   connectedUsers,
-}: chatAppProps) => {
+  conversations,
+  setConversations,
+  moveConversationToTop,
+}: chatComponentProps) => {
   const messageInputRef = useRef<HTMLInputElement>(null);
   const scrollAresRef = useRef<HTMLDivElement | null>(null);
 
@@ -134,6 +147,9 @@ const ChatComponent = ({
     }
 
     getReceiver(userToken, receiverId, setReceiver);
+
+    messageInputRef.current!.value = '';    
+    messageInputRef.current?.focus();    
   }, [receiverId]);
 
   // listen to receiving message event
@@ -158,6 +174,10 @@ const ChatComponent = ({
       setConversation({ ...conversation });
       scrollToLastMsg(scrollAresRef.current);
     });
+
+    return ()=>{
+      socket?.removeAllListeners('receive-chat-message')
+    }
   }, [conversation]);
 
   const handleMessageSend: ReactEventHandler = () => {
@@ -173,21 +193,14 @@ const ChatComponent = ({
         setConversation,
         socket
       );
-      // save the new messages into the db logic :
+      // save the new messages into the db :
       saveMessage(userToken, currentUser.id, receiverId, message, conversation.id);
       messageInputRef.current.value = '';
-
-      scrollToLastMsg(scrollAresRef.current);
     }
-  };
-  const handleCloseChat = (): void => {
-    setConversation(null);
-    setReceiverId(null);
-  };
-  const scrollToLastMsg = (scrollAresRef: HTMLDivElement | null): void => {
-    setTimeout(() => {
-      scrollAresRef?.scrollIntoView(false);
-    }, 100);
+
+    scrollToLastMsg(scrollAresRef.current);
+    // make the current conversation appear at the top of the conversations list
+    setConversations(moveConversationToTop(conversations, conversation));
   };
   const handleImageSend: FormEventHandler = (e: FormEvent<HTMLInputElement>) => {
     const target = e.target as HTMLInputElement;
@@ -224,6 +237,20 @@ const ChatComponent = ({
           console.log(error);
         });
     }
+
+    scrollToLastMsg(scrollAresRef.current);
+    // make the current conversation appear at the top of the conversations list
+    setConversations(moveConversationToTop(conversations, conversation));
+  };
+
+  const handleCloseChat = (): void => {
+    setConversation(null);
+    setReceiverId(null);
+  };
+  const scrollToLastMsg = (scrollAresRef: HTMLDivElement | null): void => {
+    setTimeout(() => {
+      scrollAresRef?.scrollIntoView(false);
+    }, 100);
   };
   return (
     receiverId && (

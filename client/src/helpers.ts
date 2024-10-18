@@ -11,3 +11,13 @@ export function validURL(str: string): boolean {
   ); // fragment locator
   return !!pattern.test(str);
 }
+
+export function formatDate(messageSentOnDate: Date | 0): string {
+  const messageDate = new Date(messageSentOnDate);
+  const today = new Date();
+  const isToday = messageDate.toDateString() === today.toDateString();
+
+  return isToday
+    ? messageDate.getHours() + ':' + messageDate.getMinutes().toString().padStart(2, '0')
+    : messageDate.toDateString();
+}

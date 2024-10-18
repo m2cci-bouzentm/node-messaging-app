@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Message, User } from '@/types';
-import { validURL } from '@/helpers';
+import { validURL, formatDate } from '@/helpers';
 
 interface MessageItemProps {
   receiver: User | null;
@@ -10,15 +10,6 @@ interface MessageItemProps {
 }
 
 const MessageItem = ({ receiver, message, currentUser }: MessageItemProps) => {
-  const formatDate = (messageSentOnDate: Date | 0): string => {
-    const messageDate = new Date(messageSentOnDate);
-    const today = new Date();
-    const isToday = messageDate.toDateString() === today.toDateString();
-
-    return isToday
-      ? messageDate.getHours() + ':' + messageDate.getMinutes().toString().padStart(2, '0')
-      : messageDate.toDateString();
-  };
   return (
     <>
       {/* receiver's messages */}

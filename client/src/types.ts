@@ -1,3 +1,5 @@
+import { Dispatch, SetStateAction } from 'react';
+
 export interface User {
   id: string;
   username: string;
@@ -34,3 +36,8 @@ export interface validationError {
   type?: string;
   value?: string;
 }
+
+export interface useConversationsProps {
+  conversations: Conversation[] | null;
+  setConversations: Dispatch<SetStateAction<Conversation[] | null>>;
+};

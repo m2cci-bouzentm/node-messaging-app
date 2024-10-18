@@ -51,7 +51,7 @@ const verifyUser = (req, res, next) => {
 
   if (typeof bearerHeader === 'undefined') {
     req.currentUser = null;
-    req.jwtErrorMessage = 'authorization header is undefined';
+    req.jwtError = { message: 'authorization header is undefined' };
     return next();
   }
 
@@ -60,7 +60,7 @@ const verifyUser = (req, res, next) => {
   jwt.verify(req.token, process.env.SECRET_KEY, (err, user) => {
     if (err) {
       req.currentUser = null;
-      req.jwtErrorMessage = err;
+      req.jwtError = err;
     } else {
       req.currentUser = user;
     }
@@ -158,9 +158,13 @@ app.use(function (req, res, next) {
 // error handler
 app.use(function (error, req, res, next) {
   console.log(error);
-  
-  res.status(error.status || 500);
-  res.json(error);
+
+
+  if (typeof req.jwtError !== undefined) {
+    return res.status(error.status || 500).json(req.jwtError);
+  }
+
+  res.status(error.status || 500).json(error);
 });
 
 

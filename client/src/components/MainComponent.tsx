@@ -1,16 +1,18 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
-import { Dispatch, SetStateAction, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import ChatComponent from './ChatComponent';
-import { Conversation, Message, User } from '@/types';
-import { Input } from './ui/input';
 import { Avatar, AvatarImage } from './ui/avatar';
-import { validURL } from '@/helpers';
+import { Input } from './ui/input';
 import { useNotifications } from '@toolpad/core/useNotifications';
+import { Conversation, Message, useConversationsProps, User } from '@/types';
+
+import ChatComponent from './mainComponents/ChatComponent';
+import ConversationListItemComponent from './mainComponents/ConversationListItemComponent';
+
 import { SocketContext } from '@/context';
-import ConversationListItemComponent from './ConversationListItemComponent';
+import { validURL } from '@/helpers';
 
 const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null => {
   const [users, setUsers] = useState<User[] | null>(null);
@@ -37,10 +39,6 @@ const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null 
   return users;
 };
 
-interface useConversationsProps {
-  conversations: Conversation[] | null;
-  setConversations: Dispatch<SetStateAction<Conversation[] | null>>;
-}
 const useConversations = (isLoggedIn: boolean, userToken: string | null): useConversationsProps => {
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
 
@@ -56,11 +54,8 @@ const useConversations = (isLoggedIn: boolean, userToken: string | null): useCon
     })
       .then((res) => res.json())
       .then((conversations) => {
-        const userConversation = conversations.filter(
-          (conv: Conversation) => conv.users?.length === 2
-        );
-        console.log('conversation', userConversation);
-        setConversations(userConversation);
+        console.log('conversation', conversations);
+        setConversations(conversations);
       })
       .catch((err) => {
         console.log(err);
@@ -68,6 +63,17 @@ const useConversations = (isLoggedIn: boolean, userToken: string | null): useCon
   }, [isLoggedIn]);
 
   return { conversations, setConversations };
+};
+
+const moveConversationToTop = (
+  conversations: Conversation[] | null,
+  conversation: Conversation | null
+) => {
+  if (conversations && conversation) {
+    const restOfConversations = conversations.filter((conv) => conv.id !== conversation.id);
+    return [conversation, ...restOfConversations];
+  }
+  return conversations;
 };
 
 interface MainComponentProps {
@@ -87,12 +93,12 @@ const MainComponent = ({
     isLoggedIn,
     userToken
   );
+  const [receiverId, setReceiverId] = useState<string | null>(null);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
 
   const [searchedUsers, setSearchedUsers] = useState<User[] | null>(null);
   const [searchedConversations, setSearchedConversations] = useState<Conversation[] | null>(null);
 
-  const [receiverId, setReceiverId] = useState<string | null>(null);
-  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [isUsersList, setIsUsersList] = useState<boolean>(true);
   const [isConvoList, setIsConvoList] = useState<boolean>(false);
 
@@ -113,12 +119,21 @@ const MainComponent = ({
 
     // listen to received messages notifications
     socket?.on('notify-receive-chat-message', (message: Message) => {
-      const notinMsg = validURL(message.content) ? 'sent you an image' : message.content;
-      notifications.show(`${message.sender?.username}: ${notinMsg}`, {
+      const notifMsg = validURL(message.content) ? 'sent you an image' : message.content;
+      notifications.show(`${message.sender?.username}: ${notifMsg}`, {
         autoHideDuration: 2500,
       });
+
+      const conversation = conversations?.find((conv) => conv.id === message.conversationId) || null;
+      console.log(conversations, conversation);
+      console.log('moveConversationToTop', moveConversationToTop(conversations, conversation));
+      setConversations(moveConversationToTop(conversations, conversation));
     });
-  }, []);
+
+    return ()=> {
+      socket?.removeAllListeners('notify-receive-chat-message');
+    }
+  }, [!conversations && conversations]);
 
   // create conversation OR gets an existing one AND set the receiver id
   const handleCreateOrGetExistingConversation = (receiverId: string) => {
@@ -139,8 +154,14 @@ const MainComponent = ({
       .then((conversation) => {
         setConversation(conversation);
         if (conversations) {
-          const updatedConversations = conversations.filter((conv) => conv.id !== conversation.id);
-          setConversations([...updatedConversations, conversation]);
+          const isAlreadyExistingConvo = conversations.some((conv) => conv.id === conversation.id);
+          // no need to update the state if the conversation already exists
+          if (!isAlreadyExistingConvo) {
+            const updatedConversations = conversations.filter(
+              (conv) => conv.id !== conversation.id
+            );
+            setConversations([conversation, ...updatedConversations]);
+          }
         }
       })
       .catch((err) => {
@@ -182,7 +203,6 @@ const MainComponent = ({
     setIsConvoList(true);
   };
 
-  /* TODO add functionality : remove a conversation from the ui, and the user from this conversation */
   return (
     <div className="flex h-[600px] items-start justify-between">
       <aside className="w-[30%] h-[75%]">
@@ -208,9 +228,8 @@ const MainComponent = ({
             </h6>
 
             {/* TODO add group chats */}
-
             {/* <h6
-              onClick={showGroupsList}
+              // onClick={showGroupsList}
               className={"mb-4 font-medium cursor-pointer rounded-lg leading-none p-2 hover:bg-slate-100 " + (false && "bg-slate-100")}
             >
               Groups
@@ -300,6 +319,9 @@ const MainComponent = ({
         setConversation={setConversation}
         isConnectedUser={isConnectedUser}
         connectedUsers={connectedUsers}
+        conversations={conversations}
+        setConversations={setConversations}
+        moveConversationToTop={moveConversationToTop}
       />
     </div>
   );

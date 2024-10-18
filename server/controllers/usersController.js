@@ -83,6 +83,14 @@ const sendMessage = [
         conversationId,
       }
     });
+    await prisma.conversation.update({
+      where: {
+        id: conversationId
+      },
+      data: {
+        updatedAt: new Date()
+      },
+    });
 
     res.json(message);
   })];
@@ -108,6 +116,14 @@ const handleFileUpload = [
             senderId: req.currentUser.id,
             receiverId,
             conversationId
+          },
+        });
+        await prisma.conversation.update({
+          where: {
+            id: conversationId
+          },
+          data: {
+            updatedAt: new Date()
           },
         });
         res.json(message);

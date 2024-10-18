@@ -6,12 +6,12 @@ import {
   NavigationMenuItem,
   NavigationMenuList,
 } from '@/components/ui/navigation-menu';
-import NotAuthenticatedNav from './components/NotAuthenticatedNav';
+import NotAuthenticatedNav from './components/navComponents/NotAuthenticatedNav';
 import SignUpComponent from './components/SignUpComponent';
 import LoginComponent from './components/LoginComponent';
 import SettingsComponent from './components/SettingsComponent';
 import MainComponent from './components/MainComponent';
-import AuthenticatedNav from './components/AuthenticatedNav';
+import AuthenticatedNav from './components/navComponents/AuthenticatedNav';
 
 import { User } from './types';
 
@@ -60,8 +60,17 @@ const useAuthenticateUserOnMount = ({
         Authorization: `Bearer ${storedToken}`,
       },
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((error) => {
+            throw new Error(error.message);
+          });
+        }
+        return res.json();
+      })
       .then((user) => {
+        console.log(user);
+
         setCurrentUser(user);
         setUserToken(storedToken);
         setIsLoggedIn(true);
@@ -106,8 +115,10 @@ function App() {
     socket?.emit('user-disconnected', currentUser);
   };
 
-  // TODO make it responsive
-  /* TODO make pictures look bigger in the chat */
+  /* 
+  TODO make it responsive
+  TODO make pictures look bigger in the chat 
+  */
 
   return (
     <SocketContext.Provider value={useSocket(isLoggedIn)}>
