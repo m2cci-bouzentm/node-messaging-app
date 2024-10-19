@@ -35,38 +35,24 @@ import { Conversation, Message, User } from '@/types';
 import { validURL } from '@/helpers';
 import { v4 as uuid } from 'uuid';
 
-const sendMessageToReceiverInRealTime = (
-  messageContent: string,
-  receiverId: string,
-  currentUser: User,
-  conversation: Conversation,
-  setConversation: Dispatch<SetStateAction<Conversation | null>>,
-  socket: Socket | null
-) => {
-  const emittedMsg: Message = {
-    id: uuid(), // as temp id just for rendering purposes
-    senderId: currentUser?.id,
-    sender: currentUser,
-    receiverId,
-    content: messageContent,
-    conversationId: conversation.id,
-    sentOn: new Date(),
-  };
+// TODO update the  receiverId to receivers in case of a group
 
-  conversation.messages?.push(emittedMsg);
-  setConversation({ ...conversation });
-
-  // emit send message event to the server
-  socket?.emit('send-chat-message', emittedMsg, conversation.id);
-};
-
-const saveMessage = (
-  userToken: string,
-  senderId: string,
-  receiverId: string,
-  message: string,
-  conversationId: string
-): void => {
+interface SaveMessageParams {
+  userToken: string;
+  senderId: string;
+  receiversIds: string[] | null;
+  receiverId: string | null;
+  message: string;
+  conversationId: string;
+}
+const saveMessage = ({
+  userToken,
+  senderId,
+  receiversIds,
+  receiverId,
+  message,
+  conversationId,
+}: SaveMessageParams): void => {
   fetch(`${import.meta.env.VITE_API_BASE_URL}/users/message/:${senderId}`, {
     method: 'POST',
     headers: {
@@ -77,11 +63,17 @@ const saveMessage = (
       content: message,
       senderId,
       receiverId,
+      receiversIds,
       conversationId,
     }),
-  }).catch((err) => {
-    console.log(err);
-  });
+  })
+    .then((res) => res.json())
+    .then((message) => {
+      console.log('message', message);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 };
 
 const getReceiver = (
@@ -119,6 +111,8 @@ interface chatComponentProps {
     conversations: Conversation[] | null,
     conversation: Conversation | null
   ) => Conversation[] | null;
+  groups: Conversation[] | null;
+  setGroups: Dispatch<SetStateAction<Conversation[] | null>>;
 }
 
 const ChatComponent = ({
@@ -133,6 +127,8 @@ const ChatComponent = ({
   conversations,
   setConversations,
   moveConversationToTop,
+  groups,
+  setGroups,
 }: chatComponentProps) => {
   const messageInputRef = useRef<HTMLInputElement>(null);
   const scrollAresRef = useRef<HTMLDivElement | null>(null);
@@ -148,8 +144,8 @@ const ChatComponent = ({
 
     getReceiver(userToken, receiverId, setReceiver);
 
-    messageInputRef.current!.value = '';    
-    messageInputRef.current?.focus();    
+    messageInputRef.current!.value = '';
+    messageInputRef.current?.focus();
   }, [receiverId]);
 
   // listen to receiving message event
@@ -175,11 +171,50 @@ const ChatComponent = ({
       scrollToLastMsg(scrollAresRef.current);
     });
 
-    return ()=>{
-      socket?.removeAllListeners('receive-chat-message')
-    }
+    return () => {
+      socket?.removeAllListeners('receive-chat-message');
+    };
   }, [conversation]);
 
+  const sendMessageToReceiverInRealTime = (
+    messageContent: string,
+    receiverId: string,
+    currentUser: User,
+    conversation: Conversation,
+    setConversation: Dispatch<SetStateAction<Conversation | null>>,
+    socket: Socket | null
+  ) => {
+    const emittedMsg: Message = {
+      id: uuid(), // as temp id just for rendering purposes
+      senderId: currentUser?.id,
+      sender: currentUser,
+      receiverId,
+      receivers: conversation.users, // in case of a group chat
+      content: messageContent,
+      conversationId: conversation.id,
+      sentOn: new Date(),
+    };
+
+    conversation.messages?.push(emittedMsg);
+    setConversation({ ...conversation });
+
+    // move current conversation/group to the top of the list
+    const receivers = conversation.users?.filter((u) => u.id !== currentUser.id);
+    const receiversIds = receivers?.map((u) => u.id);
+    let currentConversation: Conversation | null;
+    if (receiversIds && receiversIds.length > 1) {
+      currentConversation = groups?.find((grp) => grp.id === emittedMsg.conversationId) || null;
+      setGroups(moveConversationToTop(groups, currentConversation));
+    } else {
+      currentConversation = conversations?.find((conv) => conv.id === emittedMsg.conversationId) || null;
+      setConversations(moveConversationToTop(conversations, currentConversation));
+    }
+
+    // emit send message event to the server
+    socket?.emit('send-chat-message', emittedMsg, conversation);
+  };
+
+  // DOM events handlers
   const handleMessageSend: ReactEventHandler = () => {
     const message = messageInputRef.current?.value;
 
@@ -187,20 +222,39 @@ const ChatComponent = ({
     if (userToken && currentUser && receiverId && message && conversation) {
       sendMessageToReceiverInRealTime(
         message,
-        receiverId,
+        receiverId, // here the receiverId represent the groupId in case of a group
         currentUser,
         conversation,
         setConversation,
         socket
       );
+
       // save the new messages into the db :
-      saveMessage(userToken, currentUser.id, receiverId, message, conversation.id);
+      const receivers = conversation.users?.filter((u) => u.id !== currentUser.id);
+      const receiversIds = receivers?.map((u) => u.id);
+
+      if (receiversIds && receiversIds.length > 1) {
+        // in case of a group with multiple receivers
+        saveMessage({
+          userToken,
+          senderId: currentUser.id,
+          receiversIds,
+          receiverId: null,
+          message,
+          conversationId: conversation.id,
+        });
+      } else {
+        saveMessage({
+          userToken,
+          senderId: currentUser.id,
+          receiversIds: null,
+          receiverId,
+          message,
+          conversationId: conversation.id,
+        });
+      }
       messageInputRef.current.value = '';
     }
-
-    scrollToLastMsg(scrollAresRef.current);
-    // make the current conversation appear at the top of the conversations list
-    setConversations(moveConversationToTop(conversations, conversation));
   };
   const handleImageSend: FormEventHandler = (e: FormEvent<HTMLInputElement>) => {
     const target = e.target as HTMLInputElement;
@@ -213,6 +267,10 @@ const ChatComponent = ({
       formData.append('fileName', file.name);
       formData.append('receiverId', receiverId);
       formData.append('conversationId', conversation.id);
+
+      const receivers = conversation.users?.filter((u) => u.id !== currentUser.id);
+      const receiversIds = receivers?.map((u) => u.id);
+      formData.append('receiversIds', JSON.stringify(receiversIds));
 
       // send file to the server to upload it THEN send it as a message
       fetch(import.meta.env.VITE_API_BASE_URL + '/users/message/uploadFile', {
@@ -237,12 +295,7 @@ const ChatComponent = ({
           console.log(error);
         });
     }
-
-    scrollToLastMsg(scrollAresRef.current);
-    // make the current conversation appear at the top of the conversations list
-    setConversations(moveConversationToTop(conversations, conversation));
   };
-
   const handleCloseChat = (): void => {
     setConversation(null);
     setReceiverId(null);
@@ -250,7 +303,7 @@ const ChatComponent = ({
   const scrollToLastMsg = (scrollAresRef: HTMLDivElement | null): void => {
     setTimeout(() => {
       scrollAresRef?.scrollIntoView(false);
-    }, 100);
+    }, 0);
   };
   return (
     receiverId && (
@@ -269,7 +322,8 @@ const ChatComponent = ({
               </Avatar>
               <div>
                 <CardTitle className="flex items-center space-x-2">
-                  <div>@{receiver && receiver.username}</div>
+                  {/* if its a group chat then use its name rather than a receiver name which will be undefined */}
+                  <div>@{receiver ? receiver.username : conversation?.name}</div>
                   {receiver && isConnectedUser(connectedUsers, receiver) && (
                     <div className="online-status h-2 w-2 bg-green-500 text-green-500 rounded-full"></div>
                   )}
@@ -294,6 +348,7 @@ const ChatComponent = ({
                 receiver={receiver}
                 message={message}
                 currentUser={currentUser}
+                receivers={conversation.users}
               />
             ))}
           </CardContent>

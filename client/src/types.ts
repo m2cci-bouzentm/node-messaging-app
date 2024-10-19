@@ -20,12 +20,15 @@ export interface Message {
   senderId: string;
   receiver?: User;
   receiverId: string;
+  receivers?: User[];
   conversation?: Conversation;
   conversationId: string;
 }
 export interface Conversation {
   id: string;
   createdOn: Date;
+  updatedAt: Date;
+  name?: string;
   messages?: Message[];
   users?: User[];
 }
@@ -36,8 +39,11 @@ export interface validationError {
   type?: string;
   value?: string;
 }
-
-export interface useConversationsProps {
+export interface useConversationsResult {
   conversations: Conversation[] | null;
   setConversations: Dispatch<SetStateAction<Conversation[] | null>>;
-};
+}
+export interface UseGroupsReturnType {
+  groups: Conversation[] | null;
+  setGroups: Dispatch<SetStateAction<Conversation[] | null>>;
+}

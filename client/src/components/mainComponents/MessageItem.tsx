@@ -7,9 +7,12 @@ interface MessageItemProps {
   receiver: User | null;
   message: Message | null;
   currentUser: User | null;
+  receivers: User[] | undefined;
 }
 
-const MessageItem = ({ receiver, message, currentUser }: MessageItemProps) => {
+const MessageItem = ({ receiver, message, currentUser, receivers }: MessageItemProps) => {
+
+
   return (
     <>
       {/* receiver's messages */}
@@ -17,6 +20,13 @@ const MessageItem = ({ receiver, message, currentUser }: MessageItemProps) => {
         <Card className="message flex flex-col justify-start items-start w-[45%] rounded-xl self-start bg-secondary text-main py-2 px-0">
           <div className="flex">
             <CardHeader className="flex items-center p-2 pt-0">
+              <div className="font-bold mr-4"> 
+                {receivers &&
+                  receivers.length > 2 &&
+                  receivers.map(
+                    (receiver) => receiver.id === message?.senderId && '@' + receiver.username
+                  )}
+              </div>
               <Avatar>
                 <AvatarImage
                   src={

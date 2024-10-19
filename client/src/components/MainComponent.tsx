@@ -3,16 +3,20 @@
 import { useContext, useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarImage } from './ui/avatar';
-import { Input } from './ui/input';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+
 import { useNotifications } from '@toolpad/core/useNotifications';
-import { Conversation, Message, useConversationsProps, User } from '@/types';
+import { User, Message, Conversation, useConversationsResult, UseGroupsReturnType } from '@/types';
 
 import ChatComponent from './mainComponents/ChatComponent';
 import ConversationListItemComponent from './mainComponents/ConversationListItemComponent';
 
 import { SocketContext } from '@/context';
 import { validURL } from '@/helpers';
+
+import AddGroupPopOverComponent from './mainComponents/AddGroupPopOverComponent';
+import GroupListItemComponent from './mainComponents/GroupListItemComponent';
 
 const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null => {
   const [users, setUsers] = useState<User[] | null>(null);
@@ -39,7 +43,10 @@ const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null 
   return users;
 };
 
-const useConversations = (isLoggedIn: boolean, userToken: string | null): useConversationsProps => {
+const useConversations = (
+  isLoggedIn: boolean,
+  userToken: string | null
+): useConversationsResult => {
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
 
   useEffect(() => {
@@ -63,6 +70,32 @@ const useConversations = (isLoggedIn: boolean, userToken: string | null): useCon
   }, [isLoggedIn]);
 
   return { conversations, setConversations };
+};
+
+const useGroups = (isLoggedIn: boolean, userToken: string | null): UseGroupsReturnType => {
+  const [groups, setGroups] = useState<Conversation[] | null>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+    fetch(import.meta.env.VITE_API_BASE_URL + '/conversation/groups', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((groups) => {
+        console.log('groups', groups);
+        setGroups(groups);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, [isLoggedIn]);
+
+  return { groups, setGroups };
 };
 
 const moveConversationToTop = (
@@ -89,18 +122,22 @@ const MainComponent = ({
   userToken,
 }: MainComponentProps) => {
   const users: User[] | null = useUsers(isLoggedIn, userToken);
-  const { conversations, setConversations }: useConversationsProps = useConversations(
+  const { conversations, setConversations }: useConversationsResult = useConversations(
     isLoggedIn,
     userToken
   );
+  const { groups, setGroups }: UseGroupsReturnType = useGroups(isLoggedIn, userToken);
+
   const [receiverId, setReceiverId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
   const [searchedUsers, setSearchedUsers] = useState<User[] | null>(null);
   const [searchedConversations, setSearchedConversations] = useState<Conversation[] | null>(null);
+  const [searchedGroups, setSearchedGroups] = useState<Conversation[] | null>(null);
 
   const [isUsersList, setIsUsersList] = useState<boolean>(true);
   const [isConvoList, setIsConvoList] = useState<boolean>(false);
+  const [isGroupList, setIsGroupList] = useState(false);
 
   const socket = useContext(SocketContext);
 
@@ -109,7 +146,8 @@ const MainComponent = ({
   useEffect(() => {
     setSearchedUsers(users);
     setSearchedConversations(conversations);
-  }, [users, conversations]);
+    setSearchedGroups(groups);
+  }, [users, conversations, groups]);
 
   useEffect(() => {
     // notify the user when he receives a message
@@ -118,24 +156,31 @@ const MainComponent = ({
     socket?.emit('join-room', currentUser?.id);
 
     // listen to received messages notifications
-    socket?.on('notify-receive-chat-message', (message: Message) => {
+    socket?.on('notify-receive-chat-message', (message: Message, grpName: string | undefined) => {
       const notifMsg = validURL(message.content) ? 'sent you an image' : message.content;
-      notifications.show(`${message.sender?.username}: ${notifMsg}`, {
+
+      notifications.show(`${message.sender?.username} in ${grpName && grpName}: ${notifMsg}`, {
         autoHideDuration: 2500,
       });
+      console.log('notif message', message);
+      let conversation;
 
-      const conversation = conversations?.find((conv) => conv.id === message.conversationId) || null;
-      console.log(conversations, conversation);
-      console.log('moveConversationToTop', moveConversationToTop(conversations, conversation));
-      setConversations(moveConversationToTop(conversations, conversation));
+      // handling the case of group chat to move the grp chat to the top of the list when receiving a message
+      if (message.receivers && message.receivers.length > 1) {
+        conversation = groups?.find((grp) => grp.id === message.conversationId) || null;
+        setGroups(moveConversationToTop(groups, conversation));
+      } else {
+        conversation = conversations?.find((conv) => conv.id === message.conversationId) || null;
+        setConversations(moveConversationToTop(conversations, conversation));
+      }
     });
 
-    return ()=> {
+    return () => {
       socket?.removeAllListeners('notify-receive-chat-message');
-    }
-  }, [!conversations && conversations]);
+    };
+  }, [!conversations && conversations, !groups && groups]);
 
-  // create conversation OR gets an existing one AND set the receiver id
+  // create conversation OR gets an existing one BETWEEN_TWO_USERS then set the receiver id
   const handleCreateOrGetExistingConversation = (receiverId: string) => {
     setReceiverId(receiverId);
 
@@ -169,6 +214,30 @@ const MainComponent = ({
       });
   };
 
+  // gets group information AND set the receiverId to the groupId
+  const handleGetGroup = (groupBeforeUpdate: Conversation) => {
+    /*
+    in this case the group is the receiver
+     And also is the conversation at the same time
+    */
+    setReceiverId(groupBeforeUpdate?.id);
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/conversation/groups`, {
+      method: 'GET',
+      headers: {
+        'Content-type': 'Application/json',
+        Authorization: `Bearer ${userToken}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((groups) => {
+        const group = groups.filter((grp: Conversation) => grp.id === groupBeforeUpdate.id)[0];
+        setConversation(group);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   // event handlers
   const handleUserSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const searchedUsers = users?.filter((user) => user.username.includes(e?.currentTarget.value));
@@ -189,18 +258,32 @@ const MainComponent = ({
       setSearchedConversations(searchedConversations);
     }
   };
+  const handleGroupSearch: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const searchedGroups = groups?.filter(
+      (grp) => grp.name && grp.name.includes(e?.currentTarget.value)
+    );
 
+    if (searchedGroups) {
+      setSearchedGroups(searchedGroups);
+    }
+  };
   const isConnectedUser = (connectedUsers: User[], checkedUser: User): boolean => {
     return connectedUsers.some((user) => user.id === checkedUser.id);
   };
-
   const showUsersList = (): void => {
     setIsUsersList(true);
     setIsConvoList(false);
+    setIsGroupList(false);
   };
   const showConvoList = (): void => {
     setIsUsersList(false);
     setIsConvoList(true);
+    setIsGroupList(false);
+  };
+  const showGroupList = (): void => {
+    setIsUsersList(false);
+    setIsConvoList(false);
+    setIsGroupList(true);
   };
 
   return (
@@ -227,13 +310,15 @@ const MainComponent = ({
               Conversations
             </h6>
 
-            {/* TODO add group chats */}
-            {/* <h6
-              // onClick={showGroupsList}
-              className={"mb-4 font-medium cursor-pointer rounded-lg leading-none p-2 hover:bg-slate-100 " + (false && "bg-slate-100")}
+            <h6
+              onClick={showGroupList}
+              className={
+                'mb-4 font-medium cursor-pointer rounded-lg leading-none p-2 hover:bg-slate-100 ' +
+                (isGroupList && 'bg-slate-100')
+              }
             >
               Groups
-            </h6> */}
+            </h6>
           </div>
           <Separator />
           {isUsersList && (
@@ -307,6 +392,34 @@ const MainComponent = ({
                 })}
             </div>
           )}
+
+          {isGroupList && (
+            <div className="group-list p-4 ">
+              <div className="flex items-center space-x-4">
+                <Input
+                  onChange={handleGroupSearch}
+                  type="text"
+                  placeholder="search for a group"
+                  className="my-4"
+                />
+                <AddGroupPopOverComponent users={users} userToken={userToken} />
+              </div>
+
+              {searchedGroups &&
+                searchedGroups.map((group) => (
+                  <GroupListItemComponent
+                    key={group.id}
+                    currentUser={currentUser}
+                    handleGetGroup={handleGetGroup}
+                    group={group}
+                    groups={groups}
+                    setGroups={setGroups}
+                    userToken={userToken}
+                    setReceiverId={setReceiverId}
+                  />
+                ))}
+            </div>
+          )}
         </ScrollArea>
       </aside>
 
@@ -322,6 +435,8 @@ const MainComponent = ({
         conversations={conversations}
         setConversations={setConversations}
         moveConversationToTop={moveConversationToTop}
+        groups={groups}
+        setGroups={setGroups}
       />
     </div>
   );
