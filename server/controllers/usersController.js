@@ -16,7 +16,6 @@ const prisma = new PrismaClient();
 const validateUserMessage = [
   body('content').trim().notEmpty(),
   body('senderId').trim().notEmpty(),
-  body('receiverId').trim().notEmpty(),
   body('conversationId').trim().notEmpty()
 ]
 
@@ -72,17 +71,39 @@ const sendMessage = [
       content,
       senderId,
       receiverId,
+      receiversIds,
       conversationId,
     } = req.body;
 
-    const message = await prisma.message.create({
-      data: {
-        content,
-        senderId,
-        receiverId,
-        conversationId,
-      }
-    });
+
+    let message;
+
+    // handling the case of group chat with multiple receivers
+    if (receiversIds && receiversIds.length > 1) {
+      message = await prisma.message.create({
+        data: {
+          content,
+          senderId,
+          conversationId,
+          receivers: {
+            connect: await prisma.user.findMany({ where: { id: { in: receiversIds } } })
+          },
+        },
+        include: {
+          receivers: true
+        }
+      });
+    } else {
+      message = await prisma.message.create({
+        data: {
+          content,
+          senderId,
+          receiverId,
+          conversationId,
+        }
+      });
+    }
+
     await prisma.conversation.update({
       where: {
         id: conversationId
@@ -92,6 +113,8 @@ const sendMessage = [
       },
     });
 
+
+
     res.json(message);
   })];
 
@@ -100,7 +123,7 @@ const handleFileUpload = [
   upload.single('file'),
   asyncHandle(async (req, res, next) => {
 
-    const { receiverId, conversationId } = req.body;
+    const { receiverId, conversationId, receiversIds } = req.body;
 
     const uploadStream = cloudinary.uploader.upload_stream(
       async (error, uploadRes) => {
@@ -110,14 +133,56 @@ const handleFileUpload = [
         }
 
         const fileUrl = uploadRes.secure_url;
-        const message = await prisma.message.create({
-          data: {
-            content: fileUrl,
-            senderId: req.currentUser.id,
-            receiverId,
-            conversationId
-          },
-        });
+
+
+        // TODO
+        // const message = await prisma.message.create({
+        //   data: {
+        //     content: fileUrl,
+        //     senderId: req.currentUser.id,
+        //     receiverId,
+        //     conversationId
+        //   },
+        // });
+
+        let message;
+
+        // handling the case of group chat with multiple receivers
+        if (receiversIds && receiversIds.length > 1) {
+          message = await prisma.message.create({
+            data: {
+              content: fileUrl,
+              senderId: req.currentUser.id,
+              conversationId,
+              receivers: {
+                connect: await prisma.user.findMany({ where: { id: { in: JSON.parse(receiversIds) } } })
+              },
+            },
+            include: {
+              receivers: true
+            }
+          });
+        } else {
+          message = await prisma.message.create({
+            data: {
+              content: fileUrl,
+              senderId: req.currentUser.id,
+              receiverId,
+              conversationId,
+            }
+          });
+        }
+
+
+
+
+
+
+
+
+
+
+
         await prisma.conversation.update({
           where: {
             id: conversationId

@@ -22,6 +22,8 @@ model User {
   sentMessages     Message[]      @relation("sentMessages")
   receivedMessages Message[]      @relation("receivedMessages")
   conversations    Conversation[] //many to many relationship with Conversation
+  Message          Message?       @relation(fields: [messageId], references: [id])
+  messageId        String?
 }
 
 model Message {
@@ -31,8 +33,10 @@ model Message {
 
   sender     User   @relation("sentMessages", fields: [senderId], references: [id])
   senderId   String
-  receiver   User   @relation("receivedMessages", fields: [receiverId], references: [id])
-  receiverId String
+  receiver   User?   @relation("receivedMessages", fields: [receiverId], references: [id])
+  receiverId String?
+
+  receivers User[]
 
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
@@ -42,6 +46,7 @@ model Conversation {
   id        String    @id @default(uuid())
   createdOn DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  name      String?
   messages  Message[]
   users     User[]
 }

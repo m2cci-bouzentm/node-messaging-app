@@ -107,13 +107,22 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('share-connected-user', connectedUsersStore);
   });
 
-  socket.on('send-chat-message', (message, room) => {
-    console.log("sending message to room :", room);
+  socket.on('send-chat-message', (message, conversation) => {
+
+    console.log("sending message to room :", conversation.id);
 
     // emit notification to the receiver only
     socket.to(message.receiverId).emit('notify-receive-chat-message', message);
+
+    // emit notification to all group members if it's a group
+    if (message.receivers) {
+      message.receivers.filter(u => u.id !== message.senderId).forEach(receiver => {
+        socket.to(receiver.id).emit('notify-receive-chat-message', message, conversation.name);
+      });
+    }
+
     // emit the message to the conversation between the two users aka sender/receiver
-    socket.to(room).emit('receive-chat-message', message);
+    socket.to(conversation.id).emit('receive-chat-message', message);
   });
 
   socket.on('join-room', (room) => {

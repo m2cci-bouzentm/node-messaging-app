@@ -2,7 +2,36 @@ require('dotenv').config();
 
 const { PrismaClient } = require('@prisma/client');
 const asyncHandle = require('express-async-handler');
+const { body, validationResult } = require('express-validator');
+
 const prisma = new PrismaClient();
+
+/* 
+  Warning: possibly to get the user's groups with the conversations
+  Solution: filter the result to get only the conversations with exactly two users
+*/
+const getAllConversationsByUserId = asyncHandle(async (req, res, next) => {
+
+  const conversations = await prisma.conversation.findMany({
+    where: {
+      users: {
+        some: {
+          id: req.currentUser.id,
+        },
+      },
+    },
+    include: {
+      users: true,
+      messages: true,
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    }
+  });
+  const userConversation = conversations.filter((conv) => conv.users.length === 2);
+
+  res.json(userConversation);
+});
 
 const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, res, next) => {
   const { senderId, receiverId } = req.body;
@@ -55,7 +84,7 @@ const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, re
       updatedAt: 'asc',
     }
   });
-  
+
   if (conversationBetweenTwoUsers.length > 0) {
     return res.json(conversationBetweenTwoUsers[0]);
   }
@@ -81,37 +110,6 @@ const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, re
   });
 
   res.json(conversation);
-});
-
-
-/* 
-  Warning: possibly to get the user's groups with the conversations
-  Solution: filter the result to get only the conversations with exactly two users
-  */
-const getAllConversationsByUserId = asyncHandle(async (req, res, next) => {
-  try {
-    const conversations = await prisma.conversation.findMany({
-      where: {
-        users: {
-          some: {
-            id: req.currentUser.id,
-          },
-        },
-      },
-      include: {
-        users: true,
-        messages: true,
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      }
-    });
-    const userConversation = conversations.filter((conv) => conv.users.length === 2);
-
-    res.json(userConversation);
-  } catch (error) {
-    console.log(error);
-  }
 });
 
 const removeUserFromConversation = asyncHandle(async (req, res, next) => {
@@ -142,8 +140,101 @@ const removeUserFromConversation = asyncHandle(async (req, res, next) => {
   res.json(conversation);
 });
 
+const getAllGroupsByUserId = asyncHandle(async (req, res, next) => {
+
+  const groupsAndConversations = await prisma.conversation.findMany({
+    where: {
+      users: {
+        some: {
+          id: req.currentUser.id,
+        },
+      }
+    },
+    include: {
+      users: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatarUrl: true,
+        }
+      },
+      messages: {
+        include: {
+          receivers: true
+        }
+      }
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    }
+  })
+
+  const groups = groupsAndConversations.filter((g) => g.users.length > 2);
+
+  res.json(groups);
+});
+
+const createGroup = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('username cannot be empty')
+    .isLength({ min: 3, max: 1500 })
+    .withMessage('username must be at least 3 characters long'),
+  asyncHandle(async (req, res, next) => {
+
+    const result = validationResult(req);
+    const { name, usersIds } = req.body;
+
+    if (!result.isEmpty()) {
+      return res.json({ errors: result.array() });
+    }
+    if (usersIds.length < 2) {
+      return res.json({
+        error: {
+          message: 'To create a group you must add at least two users to a conversation'
+        }
+      });
+    }
+
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: {
+          in: [req.currentUser.id, ...usersIds]
+        }
+      }
+    })
+
+    const group = await prisma.conversation.create({
+      data: {
+        name,
+        users: {
+          connect: users
+        }
+      },
+      include: {
+        messages: true,
+        users: true
+      }
+    });
+
+
+    res.json(group);
+
+  })];
+
+const removeUserFromGroup = asyncHandle(async (req, res, next) => {
+  res.json({ no: 'no' });
+})
+
 module.exports = {
-  createOrGetIfExistConversationBetweenTwoUsers,
   getAllConversationsByUserId,
+  createOrGetIfExistConversationBetweenTwoUsers,
   removeUserFromConversation,
+  getAllGroupsByUserId,
+  createGroup,
+  removeUserFromGroup,
+
 };
