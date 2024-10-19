@@ -34,17 +34,10 @@ import { Socket } from 'socket.io-client';
 import { Conversation, Message, User } from '@/types';
 import { validURL } from '@/helpers';
 import { v4 as uuid } from 'uuid';
+import { chatComponentProps, SaveMessageParams } from './types';
 
-// TODO update the  receiverId to receivers in case of a group
 
-interface SaveMessageParams {
-  userToken: string;
-  senderId: string;
-  receiversIds: string[] | null;
-  receiverId: string | null;
-  message: string;
-  conversationId: string;
-}
+
 const saveMessage = ({
   userToken,
   senderId,
@@ -95,25 +88,6 @@ const getReceiver = (
       console.log(err);
     });
 };
-
-interface chatComponentProps {
-  userToken: string | null;
-  currentUser: User | null;
-  receiverId: string | null;
-  setReceiverId: Dispatch<SetStateAction<string | null>>;
-  conversation: Conversation | null;
-  setConversation: Dispatch<SetStateAction<Conversation | null>>;
-  isConnectedUser: (connectedUsers: User[], user: User) => boolean;
-  connectedUsers: User[];
-  conversations: Conversation[] | null;
-  setConversations: Dispatch<SetStateAction<Conversation[] | null>>;
-  moveConversationToTop: (
-    conversations: Conversation[] | null,
-    conversation: Conversation | null
-  ) => Conversation[] | null;
-  groups: Conversation[] | null;
-  setGroups: Dispatch<SetStateAction<Conversation[] | null>>;
-}
 
 const ChatComponent = ({
   userToken,
@@ -214,7 +188,7 @@ const ChatComponent = ({
     socket?.emit('send-chat-message', emittedMsg, conversation);
   };
 
-  // DOM events handlers
+  // events handlers
   const handleMessageSend: ReactEventHandler = () => {
     const message = messageInputRef.current?.value;
 
@@ -345,10 +319,8 @@ const ChatComponent = ({
             {conversation?.messages?.map((message) => (
               <MessageItem
                 key={message.id}
-                receiver={receiver}
                 message={message}
                 currentUser={currentUser}
-                receivers={conversation.users}
               />
             ))}
           </CardContent>

@@ -4,12 +4,8 @@ import { Form, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User } from '@/types';
-interface LoginComponentProps {
-  setUserToken: (token: string) => void;
-  setCurrentUser: (user: User) => void;
-  setIsLoggedIn: (userState: boolean) => void;
-}
+import { LoginComponentProps } from './types';
+ 
 interface LogInError {
   message: string;
 }

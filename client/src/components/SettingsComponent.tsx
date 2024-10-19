@@ -3,15 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Form, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRef, useState } from 'react';
-import { User, validationError } from '@/types';
+import {  SettingsComponentProps } from './types';
+import {  validationError } from '@/types';
 import { validURL } from '@/helpers';
 
-interface SettingsComponentProps {
-  currentUser: User | null;
-  userToken: string | null;
-  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
-  setUserToken: React.Dispatch<React.SetStateAction<string | null>>;
-}
 
 const SettingsComponent = ({
   currentUser,

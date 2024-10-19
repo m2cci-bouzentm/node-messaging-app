@@ -10,6 +10,7 @@ router.put("/twoUsers", conversationRouter.removeUserFromConversation);
 
 
 router.get("/groups", conversationRouter.getAllGroupsByUserId);
+router.get("/groups/:groupId", conversationRouter.getGroupByUserId);
 router.post("/groups", conversationRouter.createGroup);
 router.put("/groups", conversationRouter.removeUserFromGroup);
 

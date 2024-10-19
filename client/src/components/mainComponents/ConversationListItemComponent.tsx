@@ -1,24 +1,11 @@
-import { ReactEventHandler, SetStateAction } from 'react';
+import { ReactEventHandler } from 'react';
 import { Avatar, AvatarImage } from '../ui/avatar';
 import { validURL } from '@/helpers';
 import { Separator } from '../ui/separator';
-import { Conversation, User } from '@/types';
 import { Button } from '../ui/button';
 import { BsThreeDots } from 'react-icons/bs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
-interface ConversationListItemComponentProps {
-  currentUser: User | null;
-  conversationId: string | null;
-  conversations: Conversation[] | null;
-  setConversations: React.Dispatch<SetStateAction<Conversation[] | null>>;
-  userToken: string | null;
-  receiver: User | null;
-  setReceiverId: React.Dispatch<SetStateAction<string | null>>;
-  connectedUsers: User[];
-  isConnectedUser: (connectedUsers: User[], checkedUser: User) => boolean;
-  handleCreateOrGetExistingConversation: (receiverId: string) => void;
-}
+import { ConversationListItemComponentProps } from './types';
 
 const ConversationListItemComponent = ({
   currentUser,
@@ -32,7 +19,7 @@ const ConversationListItemComponent = ({
   isConnectedUser,
   handleCreateOrGetExistingConversation,
 }: ConversationListItemComponentProps) => {
-
+  //
   const handleConversationDelete: ReactEventHandler = (e): void => {
     e.stopPropagation();
 
@@ -60,7 +47,6 @@ const ConversationListItemComponent = ({
         console.log(error);
       });
   };
-
   return (
     <>
       <div className="flex space-x-2 items-center py-1">

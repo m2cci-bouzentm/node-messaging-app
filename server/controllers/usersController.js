@@ -112,8 +112,7 @@ const sendMessage = [
         updatedAt: new Date()
       },
     });
-
-
+    
 
     res.json(message);
   })];
@@ -128,22 +127,11 @@ const handleFileUpload = [
     const uploadStream = cloudinary.uploader.upload_stream(
       async (error, uploadRes) => {
         if (error) {
-          console.log('Error uploading file', error);
           return next(error);
         }
 
         const fileUrl = uploadRes.secure_url;
 
-
-        // TODO
-        // const message = await prisma.message.create({
-        //   data: {
-        //     content: fileUrl,
-        //     senderId: req.currentUser.id,
-        //     receiverId,
-        //     conversationId
-        //   },
-        // });
 
         let message;
 
@@ -161,7 +149,7 @@ const handleFileUpload = [
             include: {
               receivers: true
             }
-          });
+          });        
         } else {
           message = await prisma.message.create({
             data: {
@@ -173,16 +161,6 @@ const handleFileUpload = [
           });
         }
 
-
-
-
-
-
-
-
-
-
-
         await prisma.conversation.update({
           where: {
             id: conversationId
@@ -191,8 +169,10 @@ const handleFileUpload = [
             updatedAt: new Date()
           },
         });
+
         res.json(message);
       });
+
 
     Readable.from(req.file.buffer).pipe(uploadStream);
   })

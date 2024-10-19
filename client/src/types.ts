@@ -1,5 +1,3 @@
-import { Dispatch, SetStateAction } from 'react';
-
 export interface User {
   id: string;
   username: string;
@@ -39,11 +37,8 @@ export interface validationError {
   type?: string;
   value?: string;
 }
-export interface useConversationsResult {
-  conversations: Conversation[] | null;
-  setConversations: Dispatch<SetStateAction<Conversation[] | null>>;
-}
-export interface UseGroupsReturnType {
-  groups: Conversation[] | null;
-  setGroups: Dispatch<SetStateAction<Conversation[] | null>>;
+export interface authenticateUserHookParams {
+  setCurrentUser: (currentUserState: User | null) => void;
+  setUserToken: (userTokenState: string | null) => void;
+  setIsLoggedIn: (isLoggedInStatus: boolean) => void;
 }

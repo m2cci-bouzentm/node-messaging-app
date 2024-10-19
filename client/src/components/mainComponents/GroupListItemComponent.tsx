@@ -1,20 +1,10 @@
-import { ReactEventHandler, SetStateAction } from 'react';
+import { ReactEventHandler } from 'react';
 import { Avatar, AvatarImage } from '../ui/avatar';
 import { Separator } from '../ui/separator';
-import { Conversation, User } from '@/types';
 import { Button } from '../ui/button';
 import { BsThreeDots } from 'react-icons/bs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
-interface GroupListItemComponentProps {
-  currentUser: User | null;
-  handleGetGroup: (group: Conversation) => void;
-  group: Conversation | null;
-  groups: Conversation[] | null;
-  setGroups: React.Dispatch<SetStateAction<Conversation[] | null>>;
-  userToken: string | null;
-  setReceiverId: React.Dispatch<SetStateAction<string | null>>;
-}
+import { GroupListItemComponentProps } from './types';
 
 const GroupListItemComponent = ({
   currentUser,
@@ -25,9 +15,7 @@ const GroupListItemComponent = ({
   userToken,
   setReceiverId,
 }: GroupListItemComponentProps) => {
-
-
-  
+  //
   const handleGroupQuit: ReactEventHandler = (e): void => {
     e.stopPropagation();
 
@@ -55,7 +43,6 @@ const GroupListItemComponent = ({
         console.log(err);
       });
   };
-
   return (
     <>
       <div className="flex space-x-2 items-center py-1">

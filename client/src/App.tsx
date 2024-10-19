@@ -13,7 +13,7 @@ import SettingsComponent from './components/SettingsComponent';
 import MainComponent from './components/MainComponent';
 import AuthenticatedNav from './components/navComponents/AuthenticatedNav';
 
-import { User } from './types';
+import { authenticateUserHookParams, User } from './types';
 
 import io, { Socket } from 'socket.io-client';
 import { SocketContext } from './context';
@@ -38,16 +38,11 @@ const useSocket = (isLoggedIn: boolean): Socket | null => {
   return socket;
 };
 
-interface authenticateUserParams {
-  setCurrentUser: (currentUserState: User | null) => void;
-  setUserToken: (userTokenState: string | null) => void;
-  setIsLoggedIn: (isLoggedInStatus: boolean) => void;
-}
 const useAuthenticateUserOnMount = ({
   setCurrentUser,
   setUserToken,
   setIsLoggedIn,
-}: authenticateUserParams) => {
+}:  authenticateUserHookParams) => {
   useEffect(() => {
     const storedToken = localStorage.getItem('userToken');
     if (!storedToken) {

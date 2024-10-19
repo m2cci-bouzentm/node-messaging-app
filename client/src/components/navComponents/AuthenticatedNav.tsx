@@ -1,16 +1,12 @@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Link } from 'react-router-dom';
-import React, { useContext, useState } from 'react';
-import { User } from '@/types';
+import { useContext, useState } from 'react';
 import { IoIosArrowDown } from 'react-icons/io';
 import { validURL } from '@/helpers';
 import { SocketContext } from '@/context';
+import { AuthenticatedNavProps } from './types';
 
-interface AuthenticatedNavProps {
-  currentUser: User | null;
-  setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
-  setCurrentUser: (user: User | null) => void;
-}
+
 const AuthenticatedNav = ({
   currentUser,
   setIsLoggedIn,

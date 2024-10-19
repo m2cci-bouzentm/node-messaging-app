@@ -6,6 +6,18 @@ const { body, validationResult } = require('express-validator');
 
 const prisma = new PrismaClient();
 
+const validateGroup = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('username cannot be empty')
+    .isLength({ min: 3, max: 1500 })
+    .withMessage('username must be at least 3 characters long'),
+  body('usersIds')
+    .isArray({ min: 2 })
+    .withMessage('To create a group you must add at least two users to a conversation'),
+]
+
 /* 
   Warning: possibly to get the user's groups with the conversations
   Solution: filter the result to get only the conversations with exactly two users
@@ -21,8 +33,19 @@ const getAllConversationsByUserId = asyncHandle(async (req, res, next) => {
       },
     },
     include: {
-      users: true,
-      messages: true,
+      users: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatarUrl: true,
+        }
+      },
+      messages: {
+        include: {
+          sender: true
+        }
+      }
     },
     orderBy: {
       updatedAt: 'desc',
@@ -78,7 +101,11 @@ const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, re
           avatarUrl: true,
         },
       },
-      messages: true,
+      messages: {
+        include: {
+          sender: true
+        }
+      }
     },
     orderBy: {
       updatedAt: 'asc',
@@ -104,16 +131,57 @@ const createOrGetIfExistConversationBetweenTwoUsers = asyncHandle(async (req, re
       },
     },
     include: {
-      users: true,
-      messages: true,
+      users: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatarUrl: true,
+        }
+      },
+      messages: {
+        include: {
+          sender: true
+        }
+      }
     }
   });
 
   res.json(conversation);
 });
 
+
 const removeUserFromConversation = asyncHandle(async (req, res, next) => {
-  // TODO be careful here, can cause multiple users-empty OR one-user conversation records. maybe write a script to clean empty conversations once in a while
+  //* be careful here, it can result in multiple users-empty OR one-user conversation records
+  //* The next block of code is mean to clean the empty conversations once in a while from the db
+  /*  
+    const allConversations = await prisma.conversation.findMany({
+      include: {
+        users: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            avatarUrl: true,
+          }
+        },
+        messages: true
+      }
+    })
+    const emptyConversations = allConversations.filter(conversation => conversation.users.length <= 1);
+    for (let i = 0; i < emptyConversations.length; i++) {
+      await prisma.message.deleteMany({
+        where: {
+          conversationId: emptyConversations[i].id,
+        }
+      });
+      const resa = await prisma.conversation.delete({
+        where: {
+          id: emptyConversations[i].id
+        }
+      });
+    }
+    */
   const { conversationId, userId } = req.body;
   const conversation = await prisma.conversation.update({
     where: {
@@ -132,14 +200,54 @@ const removeUserFromConversation = asyncHandle(async (req, res, next) => {
       },
     },
     include: {
-      users: true,
-      messages: true,
+      users: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatarUrl: true,
+        }
+      },
+      messages: {
+        include: {
+          sender: true
+        }
+      }
     }
   });
 
   res.json(conversation);
 });
 
+
+
+const getGroupByUserId = asyncHandle(async (req, res, next) => {
+  const { groupId } = req.params;
+
+  const group = await prisma.conversation.findUnique({
+    where: {
+      id: groupId
+    },
+    include: {
+      users: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatarUrl: true,
+        }
+      },
+      messages: {
+        include: {
+          receivers: true,
+          sender: true
+        }
+      }
+    }
+  })
+
+  res.json(group);
+});
 const getAllGroupsByUserId = asyncHandle(async (req, res, next) => {
 
   const groupsAndConversations = await prisma.conversation.findMany({
@@ -161,7 +269,8 @@ const getAllGroupsByUserId = asyncHandle(async (req, res, next) => {
       },
       messages: {
         include: {
-          receivers: true
+          receivers: true,
+          sender: true
         }
       }
     },
@@ -176,12 +285,7 @@ const getAllGroupsByUserId = asyncHandle(async (req, res, next) => {
 });
 
 const createGroup = [
-  body('name')
-    .trim()
-    .notEmpty()
-    .withMessage('username cannot be empty')
-    .isLength({ min: 3, max: 1500 })
-    .withMessage('username must be at least 3 characters long'),
+  validateGroup,
   asyncHandle(async (req, res, next) => {
 
     const result = validationResult(req);
@@ -215,8 +319,20 @@ const createGroup = [
         }
       },
       include: {
-        messages: true,
-        users: true
+        messages: {
+          include: {
+            sender: true,
+            receiver: true
+          }
+        },
+        users: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            avatarUrl: true,
+          }
+        },
       }
     });
 
@@ -226,13 +342,49 @@ const createGroup = [
   })];
 
 const removeUserFromGroup = asyncHandle(async (req, res, next) => {
-  res.json({ no: 'no' });
-})
+  const { groupId, userId } = req.body;
+  const groups = await prisma.conversation.update({
+    where: {
+      id: groupId,
+      users: {
+        some: {
+          id: userId,
+        },
+      },
+    },
+    data: {
+      users: {
+        disconnect: {
+          id: userId,
+        },
+      },
+    },
+    include: {
+      users: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatarUrl: true,
+        }
+      },
+      messages: {
+        include: {
+          sender: true,
+          receiver: true
+        }
+      }
+    }
+  });
+
+  res.json(groups);
+});
 
 module.exports = {
   getAllConversationsByUserId,
   createOrGetIfExistConversationBetweenTwoUsers,
   removeUserFromConversation,
+  getGroupByUserId,
   getAllGroupsByUserId,
   createGroup,
   removeUserFromGroup,

@@ -5,7 +5,7 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { User } from '@/types';
+import { GroupMultipleSelectProps } from './types';
 
 
 function getStyles(name: string, userName: string[], theme: Theme) {
@@ -16,10 +16,7 @@ function getStyles(name: string, userName: string[], theme: Theme) {
   };
 }
 
-interface GroupMultipleSelectProps {
-  usersSelectRef: React.MutableRefObject<HTMLDivElement | null>;
-  users: User[] | null;
-}
+
 
 export default function GroupMultipleSelect({ usersSelectRef, users }: GroupMultipleSelectProps) {
   

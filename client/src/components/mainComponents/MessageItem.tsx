@@ -1,17 +1,10 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Message, User } from '@/types';
 import { validURL, formatDate } from '@/helpers';
+import { MessageItemProps } from './types';
 
-interface MessageItemProps {
-  receiver: User | null;
-  message: Message | null;
-  currentUser: User | null;
-  receivers: User[] | undefined;
-}
-
-const MessageItem = ({ receiver, message, currentUser, receivers }: MessageItemProps) => {
-
+const MessageItem = ({ message, currentUser }: MessageItemProps) => {
+  // const receiver:  = message?.receiver?.avatarUrl;
 
   return (
     <>
@@ -20,18 +13,12 @@ const MessageItem = ({ receiver, message, currentUser, receivers }: MessageItemP
         <Card className="message flex flex-col justify-start items-start w-[45%] rounded-xl self-start bg-secondary text-main py-2 px-0">
           <div className="flex">
             <CardHeader className="flex items-center p-2 pt-0">
-              <div className="font-bold mr-4"> 
-                {receivers &&
-                  receivers.length > 2 &&
-                  receivers.map(
-                    (receiver) => receiver.id === message?.senderId && '@' + receiver.username
-                  )}
-              </div>
+              <div className="font-bold mr-4">{message?.sender?.username}</div>
               <Avatar>
                 <AvatarImage
                   src={
-                    validURL(receiver?.avatarUrl || '')
-                      ? receiver?.avatarUrl
+                    validURL(message?.sender?.avatarUrl || '')
+                      ? message?.sender?.avatarUrl
                       : 'https://github.com/shadcn.png'
                   }
                 />

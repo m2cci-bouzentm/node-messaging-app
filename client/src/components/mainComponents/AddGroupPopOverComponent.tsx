@@ -5,15 +5,18 @@ import { IoIosAdd } from 'react-icons/io';
 import GroupMultipleSelect from '../mainComponents/GroupMultipleSelect';
 import { TextField } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import { User } from '@/types';
+import { User, validationError } from '@/types';
 import { PopoverClose } from '@radix-ui/react-popover';
+import { AddGroupPopOverComponentProps } from './types';
 
-interface AddGroupPopOverComponentProps {
-  users: User[] | null;
-  userToken: string | null;
-}
-const AddGroupPopOverComponent = ({ users, userToken }: AddGroupPopOverComponentProps) => {
+const AddGroupPopOverComponent = ({
+  users,
+  userToken,
+  groups,
+  setGroups,
+}: AddGroupPopOverComponentProps) => {
   const [usersNarrowedSearch, setUsersNarrowedSearch] = useState<User[] | null>(null);
+  const [groupCreationError, setGroupCreationError] = useState<validationError | null>(null);
 
   const groupNameRef = useRef<HTMLDivElement | null>(null);
   const usersNarrowSearchRef = useRef<HTMLDivElement | null>(null);
@@ -30,11 +33,8 @@ const AddGroupPopOverComponent = ({ users, userToken }: AddGroupPopOverComponent
 
     const groupName = groupNameInput?.value;
     const usersIds = usersSelect?.value.split(',');
+    console.log(usersIds);
 
-    if (usersIds.length < 2 || groupName.trim().length === 0) {
-      //TODO show popover error message: 'To create a group you must add at least two users to a conversation'
-      return;
-    }
 
     // query the api
     fetch(`${import.meta.env.VITE_API_BASE_URL}/conversation/groups`, {
@@ -47,12 +47,19 @@ const AddGroupPopOverComponent = ({ users, userToken }: AddGroupPopOverComponent
     })
       .then((res) => res.json())
       .then((group) => {
-        console.log(group);
+        if (typeof group.errors !== 'undefined') {
+          return setGroupCreationError(group.errors[0]);
+        }
+        if (groups) {
+          setGroups([group, ...groups]);
+        }
         closePopOverRef?.current?.click();
       })
       .catch((err) => {
         console.log(err);
       });
+
+    setGroupCreationError(null);
   };
 
   const handleUsersSearch = (): void => {
@@ -81,6 +88,7 @@ const AddGroupPopOverComponent = ({ users, userToken }: AddGroupPopOverComponent
             variant="outlined"
             ref={groupNameRef}
           />
+
           <TextField
             className="w-full"
             id="searchedUsers"
@@ -91,6 +99,12 @@ const AddGroupPopOverComponent = ({ users, userToken }: AddGroupPopOverComponent
           />
           <GroupMultipleSelect users={usersNarrowedSearch} usersSelectRef={usersSelectRef} />
         </div>
+
+        {groupCreationError && (
+          <p className="text-[0.8rem] font-medium text-red-500 dark:text-red-900">
+            {groupCreationError.msg}
+          </p>
+        )}
 
         <Button onClick={handleCreateGroup}> Create </Button>
       </PopoverContent>

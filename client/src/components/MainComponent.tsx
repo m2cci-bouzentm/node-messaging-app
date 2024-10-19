@@ -7,7 +7,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 
 import { useNotifications } from '@toolpad/core/useNotifications';
-import { User, Message, Conversation, useConversationsResult, UseGroupsReturnType } from '@/types';
+import { User, Message, Conversation } from '@/types';
 
 import ChatComponent from './mainComponents/ChatComponent';
 import ConversationListItemComponent from './mainComponents/ConversationListItemComponent';
@@ -17,6 +17,7 @@ import { validURL } from '@/helpers';
 
 import AddGroupPopOverComponent from './mainComponents/AddGroupPopOverComponent';
 import GroupListItemComponent from './mainComponents/GroupListItemComponent';
+import { MainComponentProps, useConversationsResult, UseGroupsReturnType } from './types';
 
 const useUsers = (isLoggedIn: boolean, userToken: string | null): User[] | null => {
   const [users, setUsers] = useState<User[] | null>(null);
@@ -61,7 +62,7 @@ const useConversations = (
     })
       .then((res) => res.json())
       .then((conversations) => {
-        console.log('conversation', conversations);
+        console.log('conversations', conversations);
         setConversations(conversations);
       })
       .catch((err) => {
@@ -109,12 +110,6 @@ const moveConversationToTop = (
   return conversations;
 };
 
-interface MainComponentProps {
-  connectedUsers: User[];
-  isLoggedIn: boolean;
-  currentUser: User | null;
-  userToken: string | null;
-}
 const MainComponent = ({
   connectedUsers,
   isLoggedIn,
@@ -158,14 +153,13 @@ const MainComponent = ({
     // listen to received messages notifications
     socket?.on('notify-receive-chat-message', (message: Message, grpName: string | undefined) => {
       const notifMsg = validURL(message.content) ? 'sent you an image' : message.content;
-
       notifications.show(`${message.sender?.username} in ${grpName && grpName}: ${notifMsg}`, {
         autoHideDuration: 2500,
       });
       console.log('notif message', message);
-      let conversation;
 
       // handling the case of group chat to move the grp chat to the top of the list when receiving a message
+      let conversation;
       if (message.receivers && message.receivers.length > 1) {
         conversation = groups?.find((grp) => grp.id === message.conversationId) || null;
         setGroups(moveConversationToTop(groups, conversation));
@@ -197,6 +191,8 @@ const MainComponent = ({
     })
       .then((res) => res.json())
       .then((conversation) => {
+        console.log('conversation', conversation);
+        
         setConversation(conversation);
         if (conversations) {
           const isAlreadyExistingConvo = conversations.some((conv) => conv.id === conversation.id);
@@ -214,23 +210,22 @@ const MainComponent = ({
       });
   };
 
-  // gets group information AND set the receiverId to the groupId
+  // gets group information (in case of real time changes since mounting) AND set the receiverId to the groupId
   const handleGetGroup = (groupBeforeUpdate: Conversation) => {
     /*
     in this case the group is the receiver
      And also is the conversation at the same time
     */
     setReceiverId(groupBeforeUpdate?.id);
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/conversation/groups`, {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/conversation/groups/${groupBeforeUpdate?.id}`, {
       method: 'GET',
       headers: {
         'Content-type': 'Application/json',
         Authorization: `Bearer ${userToken}`,
-      },
+      }
     })
       .then((res) => res.json())
-      .then((groups) => {
-        const group = groups.filter((grp: Conversation) => grp.id === groupBeforeUpdate.id)[0];
+      .then((group) => {
         setConversation(group);
       })
       .catch((err) => {
@@ -402,7 +397,12 @@ const MainComponent = ({
                   placeholder="search for a group"
                   className="my-4"
                 />
-                <AddGroupPopOverComponent users={users} userToken={userToken} />
+                <AddGroupPopOverComponent
+                  users={users}
+                  userToken={userToken}
+                  groups={groups}
+                  setGroups={setGroups}
+                />
               </div>
 
               {searchedGroups &&
