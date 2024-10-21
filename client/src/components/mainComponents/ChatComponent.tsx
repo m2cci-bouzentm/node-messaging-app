@@ -120,6 +120,7 @@ const ChatComponent = ({
 
     messageInputRef.current!.value = '';
     messageInputRef.current?.focus();
+    messageInputRef.current!.inputMode = 'text';
   }, [receiverId]);
 
   // listen to receiving message event
@@ -191,7 +192,7 @@ const ChatComponent = ({
   // events handlers
   const handleMessageSend: ReactEventHandler = () => {
     const message = messageInputRef.current?.value;
-
+    
     // real time chatting logic AND saving the msg into the db :
     if (userToken && currentUser && receiverId && message && conversation) {
       sendMessageToReceiverInRealTime(
@@ -346,6 +347,7 @@ const ChatComponent = ({
               type="text"
               className="z-10 sm:h-12"
               placeholder="Type a message..."
+              inputMode='none'
             />
             <Button type="submit" className='px-2 sm:px-4' onClick={handleMessageSend}>
               Send

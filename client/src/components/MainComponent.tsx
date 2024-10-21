@@ -137,6 +137,7 @@ const MainComponent = ({
   const socket = useContext(SocketContext);
 
   const notifications = useNotifications();
+  let prevMsg: Message;
 
   useEffect(() => {
     setSearchedUsers(users);
@@ -152,12 +153,16 @@ const MainComponent = ({
 
     // listen to received messages notifications
     socket?.on('notify-receive-chat-message', (message: Message, grpName: string | undefined) => {
+      // to prevent firing the event multiple times
+      if (prevMsg && prevMsg.id === message.id) return;
+
       const notifMsg = validURL(message.content) ? 'sent you an image' : message.content;
       const grpNotif = grpName ? `in ${grpName}` : '';
       notifications.show(`${message.sender?.username} ${grpNotif}: ${notifMsg}`, {
-        autoHideDuration: 2500,
+        autoHideDuration: 2000,
       });
-      console.log('notif message', message);
+      console.log(message, grpName);
+      prevMsg = message;
 
       // handling the case of group chat to move the grp chat to the top of the list when receiving a message
       let conversation;
@@ -173,7 +178,7 @@ const MainComponent = ({
     return () => {
       socket?.removeAllListeners('notify-receive-chat-message');
     };
-  }, [!conversations && conversations, !groups && groups]);
+  }, []);
 
   // create conversation OR gets an existing one BETWEEN_TWO_USERS then set the receiver id
   const handleCreateOrGetExistingConversation = (receiverId: string) => {
@@ -286,7 +291,7 @@ const MainComponent = ({
     <div className="flex h-[600px] items-start justify-between">
       <aside className="w-full md:w-[30%] h-[75%]">
         <ScrollArea className="h-full w-full rounded-md border">
-          <ScrollArea className='aside-menu-hor-scroll'>
+          <ScrollArea className="aside-menu-hor-scroll">
             <div className="aside-menu flex p-4 py-2 justify-between items-center ">
               <h6
                 onClick={showUsersList}

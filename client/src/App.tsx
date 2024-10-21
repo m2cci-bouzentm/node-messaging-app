@@ -116,7 +116,7 @@ function App() {
   // TODO fix online status ui
 
   return (
-    <SocketContext.Provider value={useSocket(isLoggedIn)}>
+    <SocketContext.Provider value={socket}>
       <Router>
         <NavigationMenu className="min-w-full lg:w-[80%] self-center py-5 px-2 lg:p-10 flex justify-between text-main">
           <NavigationMenuList>

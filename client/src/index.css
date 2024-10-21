@@ -53,4 +53,8 @@
   input {
       font-size: 16px !important;
   }
+
+  .MuiSnackbar-root {
+    top: -80% !important;
+  }
 }
