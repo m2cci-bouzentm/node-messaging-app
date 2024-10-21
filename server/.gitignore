@@ -1,3 +1,4 @@
 node_modules
 # Keep environment constiables out of version control
 .env
+../client/.env
