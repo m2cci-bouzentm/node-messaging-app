@@ -112,9 +112,6 @@ function App() {
     socket?.emit('user-disconnected', currentUser);
   };
 
-
-  // TODO fix online status ui
-
   return (
     <SocketContext.Provider value={socket}>
       <Router>
