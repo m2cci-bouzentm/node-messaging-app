@@ -10,9 +10,9 @@ const validateGroup = [
   body('name')
     .trim()
     .notEmpty()
-    .withMessage('username cannot be empty')
+    .withMessage('group name cannot be empty')
     .isLength({ min: 3, max: 1500 })
-    .withMessage('username must be at least 3 characters long'),
+    .withMessage('group name must be at least 3 characters long'),
   body('usersIds')
     .isArray({ min: 2 })
     .withMessage('To create a group you must add at least two users to a conversation'),
