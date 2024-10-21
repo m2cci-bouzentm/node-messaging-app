@@ -11,7 +11,9 @@ const jwt = require('jsonwebtoken');
 const cloudinary = require('cloudinary').v2;
 
 const { Server } = require('socket.io');
-const { instrument } = require('@socket.io/admin-ui');
+// const indexController = require("./controllers/indexController");
+
+// const { instrument } = require('@socket.io/admin-ui');
 
 const app = express();
 
@@ -32,7 +34,7 @@ const conversationRouter = require('./routes/conversation');
 const settingsRouter = require('./routes/settings');
 
 app.use(cors());
-app.use(logger('dev'));
+// app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -77,9 +79,9 @@ const isAuthorized = (req, res, next) => {
 
 
 
-app.use(verifyUser);
 app.use('/', indexRouter);
 
+app.use(verifyUser);
 // only logged in users have access for these routes
 app.use('/users', isAuthorized, usersRouter);
 app.use('/conversation', isAuthorized, conversationRouter);
@@ -170,7 +172,7 @@ app.use(function (error, req, res, next) {
 
 
   if (typeof req.jwtError !== undefined) {
-    return res.status(error.status || 500).json(req.jwtError);
+    return res.status(error.status || 500).json({ error, jwtError: req.jwtError });
   }
 
   res.status(error.status || 500).json(error);
