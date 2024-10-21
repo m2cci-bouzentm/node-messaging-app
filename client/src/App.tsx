@@ -111,6 +111,8 @@ function App() {
   };
 
 
+  // TODO fix online status ui
+
   return (
     <SocketContext.Provider value={useSocket(isLoggedIn)}>
       <Router>

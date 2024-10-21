@@ -41,7 +41,7 @@ const SignUpComponent = ({ setUserToken, setCurrentUser, setIsLoggedIn }: SignUp
       return setSignUpError(logInRes.errors[0]);
     }
 
-    localStorage.setItem('authorToken', logInRes.token);
+    localStorage.setItem('userToken', logInRes.token);
     setUserToken(logInRes.token);
     setSignUpError(null);
     setCurrentUser(logInRes.user);
