@@ -346,6 +346,7 @@ const ChatComponent = ({
               type="text"
               className="z-10 sm:h-12"
               placeholder="Type a message..."
+              inputMode='none'
             />
             <Button type="submit" className='px-2 sm:px-4' onClick={handleMessageSend}>
               Send

@@ -153,7 +153,8 @@ const MainComponent = ({
     // listen to received messages notifications
     socket?.on('notify-receive-chat-message', (message: Message, grpName: string | undefined) => {
       const notifMsg = validURL(message.content) ? 'sent you an image' : message.content;
-      notifications.show(`${message.sender?.username} in ${grpName && grpName}: ${notifMsg}`, {
+      const grpNotif = grpName ? `in ${grpName}` : '';
+      notifications.show(`${message.sender?.username} ${grpNotif}: ${notifMsg}`, {
         autoHideDuration: 2500,
       });
       console.log('notif message', message);
