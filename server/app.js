@@ -32,6 +32,10 @@ const usersRouter = require('./routes/users');
 const conversationRouter = require('./routes/conversation');
 const settingsRouter = require('./routes/settings');
 
+
+const messagingHandlers = require('./eventHandlers/messagingEvents');
+
+
 app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
@@ -71,7 +75,7 @@ const verifyUser = (req, res, next) => {
 }
 const isAuthorized = (req, res, next) => {
   if (req.currentUser === null) {
-    return next(new Error({message: "User not logged in, hence not authorized"}));
+    return next(new Error({ message: "User not logged in, hence not authorized" }));
   }
   next()
 }
@@ -88,69 +92,17 @@ app.use('/settings', isAuthorized, settingsRouter);
 
 
 
-const connectedUsersStore = [];
 
-// TODO extract eventHandlers to their own folder inside the controllers folder
+
 io.on('connection', (socket) => {
 
-  socket.on('user-connected', (user) => {
+  socket.on('user-connected', messagingHandlers.handleUserConnect);
 
-    // send the user the already connected users
-    socket.emit('share-connected-user', connectedUsersStore);
+  socket.on('send-chat-message', messagingHandlers.handleMessageSend);
 
-    // add the new user to the list of connected users if he isn't  already there
-    const userIndex = connectedUsersStore.findIndex(u => u.id === user.id);
-    if (userIndex === -1) {
-      connectedUsersStore.push(user);
-    }
+  socket.on('join-room', messagingHandlers.handleRoomJoin);
 
-    // share to everyone else the updated connected users
-    socket.broadcast.emit('share-connected-user', connectedUsersStore);
-  });
-
-  socket.on('send-chat-message', (message, conversation) => {
-
-    console.log("sending message to room :", conversation.id);
-
-    // emit notification to the receiver only
-    socket.to(message.receiverId).emit('notify-receive-chat-message', message);
-
-    // emit notification to all group members if it's a group
-    if (message.receivers) {
-      message.receivers.filter(u => u.id !== message.senderId).forEach(receiver => {
-        socket.to(receiver.id).emit('notify-receive-chat-message', message, conversation.name);
-      });
-    }
-
-    // emit the message to the conversation between the two users aka sender/receiver
-    socket.to(conversation.id).emit('receive-chat-message', message);
-  });
-
-  socket.on('join-room', (room) => {
-    socket.join(room);
-  });
-
-
-  // remove user from connected users when he logs off
-  socket.on("user-disconnected", (user) => {
-    console.log("user disconnected ...");
-
-    const userIndex = connectedUsersStore.findIndex(u => u.id === user.id);
-    const disconnectedUser = user;
-
-    if (userIndex !== -1) {
-      connectedUsersStore.splice(userIndex, 1);
-    }
-
-    // persist user online status for at least 5 secondes before removing it
-    setTimeout(() => {
-      // if the disconnectedUser hasn't reconnected in 5sec, then he is disconnected
-      if (!(connectedUsersStore.some(u => u.id === disconnectedUser.id))) {
-        socket.broadcast.emit('share-connected-user', connectedUsersStore);
-      }
-    }, 5000)
-  });
-
+  socket.on("user-disconnected", messagingHandlers.handleUserDisconnect);
 });
 
 // use socket io admin dashboard
