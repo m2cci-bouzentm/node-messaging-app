@@ -281,7 +281,7 @@ const ChatComponent = ({
   };
   return (
     receiverId && (
-      <Card className="w-[60%] h-[90%] transition-all ">
+      <Card className="h-[105%] w-full absolute z-10 md:h-[90%] md:w-[60%] md:relative transition-all ">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex space-x-4">
@@ -315,7 +315,7 @@ const ChatComponent = ({
         <Separator className="mb-4" />
 
         <ScrollArea className="h-[65%] scrollable">
-          <CardContent ref={scrollAresRef} className="space-y-8 text-sm flex flex-col">
+          <CardContent ref={scrollAresRef} className="space-y-6 md:space-y-8 text-sm flex flex-col">
             {conversation?.messages?.map((message) => (
               <MessageItem
                 key={message.id}
@@ -326,28 +326,28 @@ const ChatComponent = ({
           </CardContent>
         </ScrollArea>
 
-        <CardFooter className="w-full p-2 lg:p-6 py-4 justify-between items-center z-10">
+        <CardFooter className="w-full p-2 px-4 sm:p-2 lg:p-6 py-4 justify-between items-center z-10">
           <div className="relative flex items-center flex-none">
             <Input
               onInputCapture={handleImageSend}
               accept="image/*,.pdf"
               type="file"
-              className="absolute w-10 h-10 z-10 opacity-0 cursor-pointer"
+              className="absolute w-10 sm:h-10 z-10 opacity-0 cursor-pointer"
             />
             <IoImageOutline className="text-4xl text-main z-0 absolute" />
           </div>
 
-          <div className="space-x-4 w-[90%] flex items-center ">
+          <div className="space-x-2 sm:space-x-4 w-[80%] sm:w-[90%] flex sm:justify-end items-center ">
             <Input
               ref={messageInputRef}
               onKeyDown={(e) =>
                 e.code === 'Enter' || e.code === 'NumpadEnter' ? handleMessageSend(e) : null
               }
               type="text"
-              className="z-10 h-12"
+              className="z-10 sm:h-12"
               placeholder="Type a message..."
             />
-            <Button type="submit" onClick={handleMessageSend}>
+            <Button type="submit" className='px-2 sm:px-4' onClick={handleMessageSend}>
               Send
             </Button>
           </div>

@@ -75,7 +75,7 @@ const AddGroupPopOverComponent = ({
       <PopoverTrigger className="text-xl">
         <IoIosAdd />
       </PopoverTrigger>
-      <PopoverContent className="space-y-4">
+      <PopoverContent className="space-y-4 scale-90 text-sm md:text-sm w-[90%] md:scale-100 md:w-full">
         <div className="space-y-2">
           <h4 className="font-medium leading-none">Create a Group</h4>
         </div>

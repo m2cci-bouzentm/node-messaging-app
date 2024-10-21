@@ -110,17 +110,13 @@ function App() {
     socket?.emit('user-disconnected', currentUser);
   };
 
-  /* 
-  TODO make it responsive
-  TODO make pictures look bigger in the chat 
-  */
 
   return (
     <SocketContext.Provider value={useSocket(isLoggedIn)}>
       <Router>
         <NavigationMenu className="min-w-full lg:w-[80%] self-center py-5 px-2 lg:p-10 flex justify-between text-main">
           <NavigationMenuList>
-            <NavigationMenuItem className="text-[24px]">
+            <NavigationMenuItem className="hidden sm:block md:text-[24px]">
               <Link className="font-bold" to="/">
                 MyChatApp
               </Link>
@@ -141,7 +137,7 @@ function App() {
         </NavigationMenu>
 
         <NotificationsProvider>
-          <main className="w-[90%] xl:w-[60%] flex flex-col m-auto text-main">
+          <main className="w-[100%] md:w-[80%] xl:w-[60%] relative flex flex-col m-auto text-main">
             <Routes>
               {isLoggedIn ? (
                 // authenticated_only_routes
@@ -200,7 +196,7 @@ function App() {
           </main>
         </NotificationsProvider>
 
-        <footer className="py-[100px]"></footer>
+        {/* <footer className="py-[100px]"></footer> */}
       </Router>
     </SocketContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { validURL, formatDate } from '@/helpers';
 import { MessageItemProps } from './types';
@@ -10,61 +10,59 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
     <>
       {/* receiver's messages */}
       {message?.senderId !== currentUser?.id ? (
-        <Card className="message flex flex-col justify-start items-start w-[45%] rounded-xl self-start bg-secondary text-main py-2 px-0">
-          <div className="flex">
-            <CardHeader className="flex items-center p-2 pt-0">
-              <div className="font-bold mr-4">{message?.sender?.username}</div>
-              <Avatar>
-                <AvatarImage
-                  src={
-                    validURL(message?.sender?.avatarUrl || '')
-                      ? message?.sender?.avatarUrl
-                      : 'https://github.com/shadcn.png'
-                  }
-                />
-              </Avatar>
-            </CardHeader>
-            <CardContent className="w-full pr-2 p-0 self-start">
+        <div className="flex justify-start">
+          <div className="avatar self-end md:p-2 pt-0">
+            <Avatar>
+              <AvatarImage
+                src={
+                  validURL(message?.sender?.avatarUrl || '')
+                    ? message?.sender?.avatarUrl
+                    : 'https://github.com/shadcn.png'
+                }
+              />
+            </Avatar>
+          </div>
+          <Card className="message w-[65%] sm:w-[45%] space-y-2 flex flex-col justify-start items-start !rounded-bl-none rounded-xl bg-secondary text-main py-2 mb-8 min-w-max">
+            <CardContent className="w-full px-4 py-0 self-start">
               {message && validURL(message?.content) ? (
-                <img src={message?.content} alt="img" className="" />
+                <img src={message?.content} alt="img" className="w-[300px]" />
               ) : (
                 message?.content
               )}
             </CardContent>
-          </div>
-
-          <CardDescription className="pr-2 text-xs text-main ml-auto">
-            {formatDate(message?.sentOn || 0)}
-          </CardDescription>
-        </Card>
+            <CardDescription className="pr-2 mt-auto text-xs text-main ml-auto">
+              {message?.sender?.username} {'• ' + formatDate(message?.sentOn || 0)}
+            </CardDescription>
+          </Card>
+        </div>
       ) : (
         /* user's messages */
-        <Card className="message flex flex-col justify-end  w-[45%] rounded-xl self-end bg-main text-secondary py-2 px-0">
-          <div className="flex">
-            <CardContent className="w-full p-0 pl-4 self-start">
+        <div className="flex justify-end">
+          <Card className="message ml-auto w-[65%] sm:w-[45%] space-y-2 flex flex-col justify-start !rounded-br-none rounded-xl bg-main text-secondary py-2 mb-8 min-w-max">
+            <CardContent className="w-full px-4 py-0 self-start">
               {message && validURL(message?.content) ? (
-                <img src={message?.content} alt="img" className="w-60" />
+                <img src={message?.content} alt="img" className="w-[250px] sm:w-[300px]" />
               ) : (
                 message?.content
               )}
             </CardContent>
-            <CardFooter className="p-4 pt-0">
-              <Avatar>
-                <AvatarImage
-                  src={
-                    validURL(currentUser?.avatarUrl || '')
-                      ? currentUser?.avatarUrl
-                      : 'https://github.com/shadcn.png'
-                  }
-                />
-              </Avatar>
-            </CardFooter>
-          </div>
+            <CardDescription className="pr-2 ml-auto mr-0 text-xs text-secondary">
+              {formatDate(message?.sentOn || 0)}
+            </CardDescription>
+          </Card>
 
-          <CardDescription className="pl-2 text-xs text-secondary mr-auto">
-            {formatDate(message?.sentOn || 0)}
-          </CardDescription>
-        </Card>
+          <div className="avatar md:p-2 pt-0 self-end">
+            <Avatar>
+              <AvatarImage
+                src={
+                  validURL(currentUser?.avatarUrl || '')
+                    ? currentUser?.avatarUrl
+                    : 'https://github.com/shadcn.png'
+                }
+              />
+            </Avatar>
+          </div>
+        </div>
       )}
     </>
   );
