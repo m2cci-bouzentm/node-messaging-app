@@ -119,8 +119,7 @@ const ChatComponent = ({
     getReceiver(userToken, receiverId, setReceiver);
 
     messageInputRef.current!.value = '';
-    messageInputRef.current?.focus();
-    messageInputRef.current!.inputMode = 'text';
+    // messageInputRef.current?.focus();
   }, [receiverId]);
 
   // listen to receiving message event
@@ -347,9 +346,8 @@ const ChatComponent = ({
               type="text"
               className="z-10 sm:h-12"
               placeholder="Type a message..."
-              inputMode='none'
             />
-            <Button type="submit" className='px-2 sm:px-4' onClick={handleMessageSend}>
+            <Button type="submit" className='px-3 sm:px-4' onClick={handleMessageSend}>
               Send
             </Button>
           </div>
