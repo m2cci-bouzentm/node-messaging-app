@@ -4,8 +4,6 @@ import { validURL, formatDate } from '@/helpers';
 import { MessageItemProps } from './types';
 
 const MessageItem = ({ message, currentUser }: MessageItemProps) => {
-  // const receiver:  = message?.receiver?.avatarUrl;
-
   return (
     <>
       {/* receiver's messages */}
@@ -25,7 +23,7 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
           <Card className="message w-[65%] sm:w-[45%] space-y-2 flex flex-col justify-start items-start !rounded-bl-none rounded-xl bg-secondary text-main py-2 mb-8 min-w-max">
             <CardContent className="w-full px-4 py-0 self-start">
               {message && validURL(message?.content) ? (
-                <img src={message?.content} alt="img" className="w-[300px]" />
+                <img src={message?.content} alt="img" className="w-[220px] sm:w-[300px]" />
               ) : (
                 message?.content
               )}
@@ -39,9 +37,9 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
         /* user's messages */
         <div className="flex justify-end">
           <Card className="message ml-auto w-[65%] sm:w-[45%] space-y-2 flex flex-col justify-start !rounded-br-none rounded-xl bg-main text-secondary py-2 mb-8 min-w-max">
-            <CardContent className="w-full px-4 py-0 self-start">
+            <CardContent className="w-full px-4 py-0 relative self-start">
               {message && validURL(message?.content) ? (
-                <img src={message?.content} alt="img" className="w-[250px] sm:w-[300px]" />
+                <img src={message?.content} alt="img" className="w-[220px] sm:w-[300px]" />
               ) : (
                 message?.content
               )}

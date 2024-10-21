@@ -315,7 +315,7 @@ const ChatComponent = ({
         <Separator className="mb-4" />
 
         <ScrollArea className="h-[65%] scrollable">
-          <CardContent ref={scrollAresRef} className="space-y-6 md:space-y-8 text-sm flex flex-col">
+          <CardContent ref={scrollAresRef} className="space-y-6 px-1 sm:p-6 md:space-y-8 text-sm flex flex-col">
             {conversation?.messages?.map((message) => (
               <MessageItem
                 key={message.id}
