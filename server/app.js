@@ -71,7 +71,7 @@ const verifyUser = (req, res, next) => {
 }
 const isAuthorized = (req, res, next) => {
   if (req.currentUser === null) {
-    return next(new Error("User not logged in, hence not authorized"));
+    return next(new Error({message: "User not logged in, hence not authorized"}));
   }
   next()
 }
