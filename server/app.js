@@ -19,7 +19,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'https://admin.socket.io'],
+    origin: ['http://localhost:5173', 'https://node-messaging-app.vercel.app', 'https://admin.socket.io'],
     credentials: true,
   },
   cookie: true
