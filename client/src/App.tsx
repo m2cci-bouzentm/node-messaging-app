@@ -59,7 +59,7 @@ const useAuthenticateUserOnMount = ({
       .then((res) => {
         if (!res.ok) {
           return res.json().then((error) => {
-            throw new Error(error.message);
+            throw new Error(error);
           });
         }
         return res.json();
