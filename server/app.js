@@ -78,9 +78,9 @@ const isAuthorized = (req, res, next) => {
 
 
 
-app.use('/', indexRouter);
-
 app.use(verifyUser);
+
+app.use('/', indexRouter);
 // only logged in users have access for these routes
 app.use('/users', isAuthorized, usersRouter);
 app.use('/conversation', isAuthorized, conversationRouter);

@@ -114,9 +114,6 @@ const verifyUserLogIn = (req, res, next) => {
   if (req.currentUser === null) {
     return next(new Error({ msg: 'User Not logged In', jwtError: req.jwtErrorMessage }));
   }
-
-  console.log('_____________________________________________________________________');
-  console.log(req.currentUser);
   
   res.json(req.currentUser);
 };

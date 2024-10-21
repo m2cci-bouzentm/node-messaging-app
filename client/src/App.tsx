@@ -49,7 +49,7 @@ const useAuthenticateUserOnMount = ({
     if (!storedToken) {
       return;
     }
-
+    
     fetch(import.meta.env.VITE_API_BASE_URL + '/verifyLogin', {
       method: 'POST',
       headers: {
@@ -74,8 +74,6 @@ const useAuthenticateUserOnMount = ({
       .catch((err) => {
         console.log('An error occurred when verifying user logging...');
         console.log(err);
-
-        //TODO fix reload error
         localStorage.removeItem('userToken');
       });
   }, []);
