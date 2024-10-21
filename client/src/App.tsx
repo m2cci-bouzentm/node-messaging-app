@@ -59,7 +59,6 @@ const useAuthenticateUserOnMount = ({
       .then((res) => {
         if (!res.ok) {
           return res.json().then((error) => {
-            console.log('res', res);
             throw new Error(error);
           });
         }
@@ -75,6 +74,8 @@ const useAuthenticateUserOnMount = ({
       .catch((err) => {
         console.log('An error occurred when verifying user logging...');
         console.log(err);
+
+        //TODO fix reload error
         localStorage.removeItem('userToken');
       });
   }, []);

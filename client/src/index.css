@@ -46,3 +46,11 @@
 .css-1rju2q6-MuiButtonBase-root-MuiMenuItem-root.Mui-selected {
   background-color: #ecf0f0 !important;
 }
+
+
+@media (max-width: 500px) {
+  /* Your CSS rules go here */
+  input {
+      font-size: 1rem !important;
+  }
+}
