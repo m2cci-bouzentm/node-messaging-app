@@ -35,8 +35,7 @@ import { Conversation, Message, User } from '@/types';
 import { validURL } from '@/helpers';
 import { v4 as uuid } from 'uuid';
 import { chatComponentProps, SaveMessageParams } from './types';
-
-
+import { Textarea } from '../ui/textarea';
 
 const saveMessage = ({
   userToken,
@@ -104,7 +103,7 @@ const ChatComponent = ({
   groups,
   setGroups,
 }: chatComponentProps) => {
-  const messageInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const scrollAresRef = useRef<HTMLDivElement | null>(null);
 
   const [receiver, setReceiver] = useState<User | null>(null);
@@ -119,7 +118,9 @@ const ChatComponent = ({
     getReceiver(userToken, receiverId, setReceiver);
 
     messageInputRef.current!.value = '';
-    // messageInputRef.current?.focus();
+    if (window.innerWidth > 700) {
+      messageInputRef.current?.focus();
+    }
   }, [receiverId]);
 
   // listen to receiving message event
@@ -128,7 +129,9 @@ const ChatComponent = ({
       return;
     }
 
-    scrollToLastMsg(scrollAresRef.current);
+    // scroll to last message when sending/receiving a message
+    scrollToElement(scrollAresRef.current);
+    scrollToElement(messageInputRef.current);
 
     // join the room of the conversation whenever it changes
     socket?.emit('join-room', conversation?.id);
@@ -142,7 +145,7 @@ const ChatComponent = ({
 
       conversation.messages?.push(message);
       setConversation({ ...conversation });
-      scrollToLastMsg(scrollAresRef.current);
+      scrollToElement(scrollAresRef.current);
     });
 
     return () => {
@@ -180,7 +183,8 @@ const ChatComponent = ({
       currentConversation = groups?.find((grp) => grp.id === emittedMsg.conversationId) || null;
       setGroups(moveConversationToTop(groups, currentConversation));
     } else {
-      currentConversation = conversations?.find((conv) => conv.id === emittedMsg.conversationId) || null;
+      currentConversation =
+        conversations?.find((conv) => conv.id === emittedMsg.conversationId) || null;
       setConversations(moveConversationToTop(conversations, currentConversation));
     }
 
@@ -189,9 +193,10 @@ const ChatComponent = ({
   };
 
   // events handlers
-  const handleMessageSend: ReactEventHandler = () => {
+  const handleMessageSend: ReactEventHandler = (e) => {
+    e.preventDefault()
     const message = messageInputRef.current?.value;
-    
+
     // real time chatting logic AND saving the msg into the db :
     if (userToken && currentUser && receiverId && message && conversation) {
       sendMessageToReceiverInRealTime(
@@ -274,7 +279,7 @@ const ChatComponent = ({
     setConversation(null);
     setReceiverId(null);
   };
-  const scrollToLastMsg = (scrollAresRef: HTMLDivElement | null): void => {
+  const scrollToElement = (scrollAresRef: HTMLDivElement | HTMLTextAreaElement | null): void => {
     setTimeout(() => {
       scrollAresRef?.scrollIntoView(false);
     }, 0);
@@ -315,13 +320,12 @@ const ChatComponent = ({
         <Separator className="mb-4" />
 
         <ScrollArea className="h-[65%] scrollable">
-          <CardContent ref={scrollAresRef} className="space-y-6 px-1 sm:p-6 md:space-y-8 text-sm flex flex-col">
+          <CardContent
+            ref={scrollAresRef}
+            className="space-y-6 px-1 sm:p-6 md:space-y-8 text-sm flex flex-col"
+          >
             {conversation?.messages?.map((message) => (
-              <MessageItem
-                key={message.id}
-                message={message}
-                currentUser={currentUser}
-              />
+              <MessageItem key={message.id} message={message} currentUser={currentUser} />
             ))}
           </CardContent>
         </ScrollArea>
@@ -338,16 +342,17 @@ const ChatComponent = ({
           </div>
 
           <div className="space-x-2 sm:space-x-4 w-[80%] sm:w-[90%] flex sm:justify-end items-center ">
-            <Input
+            <Textarea
               ref={messageInputRef}
               onKeyDown={(e) =>
                 e.code === 'Enter' || e.code === 'NumpadEnter' ? handleMessageSend(e) : null
               }
-              type="text"
-              className="z-10 sm:h-12"
+              // type="text"
+              className="z-10"
               placeholder="Type a message..."
             />
-            <Button type="submit" className='px-3 sm:px-4' onClick={handleMessageSend}>
+
+            <Button type="submit" className="px-3 sm:px-4" onClick={handleMessageSend}>
               Send
             </Button>
           </div>

@@ -118,7 +118,7 @@ function App() {
   return (
     <SocketContext.Provider value={socket}>
       <Router>
-        <NavigationMenu className="min-w-full lg:w-[80%] self-center py-5 px-2 lg:p-10 flex justify-between text-main">
+        <NavigationMenu className="min-w-full z-20 relative lg:w-[80%] self-center py-5 px-2 lg:p-10 flex justify-between text-main">
           <NavigationMenuList>
             <NavigationMenuItem className="hidden sm:block md:text-[24px]">
               <Link className="font-bold" to="/">
