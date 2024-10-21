@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Link, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Link, Routes, Navigate, useNavigate } from 'react-router-dom';
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -43,10 +43,17 @@ const useAuthenticateUserOnMount = ({
   setUserToken,
   setIsLoggedIn,
 }:  authenticateUserHookParams) => {
+
+  const navigate = useNavigate();
   useEffect(() => {
     const storedToken = localStorage.getItem('userToken');
     if (!storedToken) {
       return;
+    }
+    if(storedToken==='undefined')
+    {
+      localStorage.removeItem('userToken');
+      navigate('/');
     }
 
     fetch(import.meta.env.VITE_API_BASE_URL + '/verifyLogin', {

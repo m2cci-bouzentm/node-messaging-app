@@ -11,7 +11,6 @@ const jwt = require('jsonwebtoken');
 const cloudinary = require('cloudinary').v2;
 
 const { Server } = require('socket.io');
-// const indexController = require("./controllers/indexController");
 
 // const { instrument } = require('@socket.io/admin-ui');
 
@@ -34,7 +33,7 @@ const conversationRouter = require('./routes/conversation');
 const settingsRouter = require('./routes/settings');
 
 app.use(cors());
-// app.use(logger('dev'));
+app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
