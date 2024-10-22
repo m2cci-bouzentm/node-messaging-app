@@ -96,13 +96,13 @@ app.use('/settings', isAuthorized, settingsRouter);
 
 io.on('connection', (socket) => {
 
-  socket.on('user-connected', messagingHandlers.handleUserConnect);
+  socket.on('user-connected', (user) => messagingHandlers.handleUserConnect(socket, user));
 
-  socket.on('send-chat-message', messagingHandlers.handleMessageSend);
+  socket.on('send-chat-message', (message, conversation) => messagingHandlers.handleMessageSend(socket, message, conversation));
 
-  socket.on('join-room', messagingHandlers.handleRoomJoin);
+  socket.on('join-room', (room) => messagingHandlers.handleRoomJoin(socket, room));
 
-  socket.on("user-disconnected", messagingHandlers.handleUserDisconnect);
+  socket.on("user-disconnected", (user) => messagingHandlers.handleUserDisconnect(socket, user));
 });
 
 // use socket io admin dashboard

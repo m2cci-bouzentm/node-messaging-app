@@ -1,7 +1,7 @@
 
 const connectedUsersStore = [];
 
-function handleUserConnect(user) {
+function handleUserConnect(socket, user) {
 
   // send the user the already connected users
   socket.emit('share-connected-user', connectedUsersStore);
@@ -16,7 +16,7 @@ function handleUserConnect(user) {
   socket.broadcast.emit('share-connected-user', connectedUsersStore);
 }
 
-function handleMessageSend(message, conversation) {
+function handleMessageSend(socket, message, conversation) {
 
   console.log("sending message to room :", conversation.id);
 
@@ -34,12 +34,12 @@ function handleMessageSend(message, conversation) {
   socket.to(conversation.id).emit('receive-chat-message', message);
 }
 
-function handleRoomJoin(room) {
+function handleRoomJoin(socket, room) {
   socket.join(room);
 }
 
 // remove user from connected users when he logs off
-function handleUserDisconnect(user) {
+function handleUserDisconnect(socket, user) {
   console.log("user disconnected ...");
 
   const userIndex = connectedUsersStore.findIndex(u => u.id === user.id);
