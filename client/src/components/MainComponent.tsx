@@ -162,7 +162,7 @@ const MainComponent = ({
         autoHideDuration: 2000,
       });
       console.log(message, grpName);
-      prevMsg = message;
+      prevMsg = { ...message };
 
       // handling the case of group chat to move the grp chat to the top of the list when receiving a message
       let conversation;

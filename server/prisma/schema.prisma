@@ -38,6 +38,8 @@ model Message {
 
   receivers User[]
 
+  // isRead  Boolean @default(false)
+
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
 }

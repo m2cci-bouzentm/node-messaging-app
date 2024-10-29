@@ -73,7 +73,7 @@ const verifyUser = (req, res, next) => {
     next();
   });
 }
-const isAuthorized = (req, res, next) => {
+const isLoggedIn = (req, res, next) => {
   if (req.currentUser === null) {
     return next(new Error({ message: "User not logged in, hence not authorized" }));
   }
@@ -86,9 +86,9 @@ app.use(verifyUser);
 
 app.use('/', indexRouter);
 // only logged in users have access for these routes
-app.use('/users', isAuthorized, usersRouter);
-app.use('/conversation', isAuthorized, conversationRouter);
-app.use('/settings', isAuthorized, settingsRouter);
+app.use('/users', isLoggedIn, usersRouter);
+app.use('/conversation', isLoggedIn, conversationRouter);
+app.use('/settings', isLoggedIn, settingsRouter);
 
 
 
