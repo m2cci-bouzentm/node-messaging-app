@@ -106,7 +106,7 @@ function App() {
     return () => {
       window.removeEventListener('beforeunload', disconnectUser);
     };
-  }, [socket, currentUser]);
+  }, [socket, currentUser, isLoggedIn]);
 
   const disconnectUser = () => {
     socket?.emit('user-disconnected', currentUser);
