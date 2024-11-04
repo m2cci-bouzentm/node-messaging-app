@@ -23,7 +23,7 @@ model User {
   receivedMessages Message[]      @relation("receivedMessages")
   conversations    Conversation[] //many to many relationship with Conversation
   Message          Message?       @relation(fields: [messageId], references: [id])
-  messageId        String?
+  messageId        String?  
 }
 
 model Message {
@@ -38,7 +38,7 @@ model Message {
 
   receivers User[]
 
-  // isRead  Boolean @default(false)
+  isRead  Boolean @default(false)
 
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String

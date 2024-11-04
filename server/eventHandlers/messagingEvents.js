@@ -9,7 +9,7 @@ function handleUserConnect(socket, user) {
   // add the new user to the list of connected users if he isn't  already there
   const userIndex = connectedUsersStore.findIndex(u => u.id === user.id);
   if (userIndex === -1) {
-    connectedUsersStore.push(user);
+    connectedUsersStore.push({...user, socketId: socket.id});
   }
 
   // share to everyone else the updated connected users
@@ -58,9 +58,24 @@ function handleUserDisconnect(socket, user) {
   }, 5000)
 }
 
+function handleConnectionLost(socket) {
+  // search the user that has the same socketId as the socket.id and remove it from online Users
+  console.log("connection lost");
+  console.log(socket.id);
+  
+  const userIndex = connectedUsersStore.findIndex(u => u.socketId === socket.id);
+
+  if (userIndex !== -1) {
+    connectedUsersStore.splice(userIndex, 1);
+    socket.broadcast.emit('share-connected-user', connectedUsersStore);
+  }
+
+}
+
 module.exports = {
   handleUserConnect,
   handleMessageSend,
   handleRoomJoin,
-  handleUserDisconnect
+  handleUserDisconnect,
+  handleConnectionLost
 }

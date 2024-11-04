@@ -103,6 +103,8 @@ io.on('connection', (socket) => {
   socket.on('join-room', (room) => messagingHandlers.handleRoomJoin(socket, room));
 
   socket.on("user-disconnected", (user) => messagingHandlers.handleUserDisconnect(socket, user));
+
+  socket.on("disconect",() => messagingHandlers.handleConnectionLost(socket) )
 });
 
 // use socket io admin dashboard
