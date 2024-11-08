@@ -19,7 +19,6 @@ const validateUserMessage = [
   body('conversationId').trim().notEmpty()
 ]
 
-
 const getUsers = asyncHandle(async (req, res, next) => {
 
   const users = await prisma.user.findMany({
@@ -117,7 +116,6 @@ const sendMessage = [
     res.json(message);
   })];
 
-
 const handleFileUpload = [
   upload.single('file'),
   asyncHandle(async (req, res, next) => {
@@ -178,14 +176,9 @@ const handleFileUpload = [
   })
 ]
 
-
-
-
-
 module.exports = {
   getUsers,
   getUserById,
-  sendMessage,
   handleFileUpload,
-
+  sendMessage,
 }

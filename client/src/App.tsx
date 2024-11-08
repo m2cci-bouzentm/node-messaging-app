@@ -42,14 +42,14 @@ const useAuthenticateUserOnMount = ({
   setCurrentUser,
   setUserToken,
   setIsLoggedIn
-}:  authenticateUserHookParams) => {
+}: authenticateUserHookParams) => {
 
   useEffect(() => {
     const storedToken = localStorage.getItem('userToken');
     if (!storedToken) {
       return;
     }
-    
+
     fetch(import.meta.env.VITE_API_BASE_URL + '/verifyLogin', {
       method: 'POST',
       headers: {
@@ -65,8 +65,6 @@ const useAuthenticateUserOnMount = ({
         return res.json();
       })
       .then((user) => {
-        console.log(user);
-
         setCurrentUser(user);
         setUserToken(storedToken);
         setIsLoggedIn(true);
@@ -86,7 +84,7 @@ function App() {
   const socket = useSocket(isLoggedIn);
   const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
 
-  
+
   // authenticate user on mount
   useAuthenticateUserOnMount({ setCurrentUser, setUserToken, setIsLoggedIn });
 
@@ -97,7 +95,6 @@ function App() {
 
     socket?.emit('user-connected', currentUser);
     socket?.on('share-connected-user', (connectedUsers) => {
-      console.log('connectedUsers', connectedUsers);
       setConnectedUsers(connectedUsers);
     });
 
@@ -114,91 +111,91 @@ function App() {
 
   return (
     <SocketContext.Provider value={socket}>
-      <Router>
-        <NavigationMenu className="min-w-full z-20 relative lg:w-[80%] self-center py-5 px-2 lg:p-10 flex justify-between text-main">
-          <NavigationMenuList>
-            <NavigationMenuItem className="hidden sm:block md:text-[24px]">
-              <Link className="font-bold" to="/">
-                MyChatApp
-              </Link>
-            </NavigationMenuItem>
-          </NavigationMenuList>
+        <Router>
+          <NavigationMenu className="min-w-full z-20 relative lg:w-[80%] self-center py-5 px-2 lg:p-10 flex justify-between text-main">
+            <NavigationMenuList>
+              <NavigationMenuItem className="hidden sm:block md:text-[24px]">
+                <Link className="font-bold" to="/">
+                  MyChatApp
+                </Link>
+              </NavigationMenuItem>
+            </NavigationMenuList>
 
-          <div className="space-x-6 flex not-authenticated">
-            {isLoggedIn ? (
-              <AuthenticatedNav
-                currentUser={currentUser}
-                setCurrentUser={setCurrentUser}
-                setIsLoggedIn={setIsLoggedIn}
-              />
-            ) : (
-              <NotAuthenticatedNav />
-            )}
-          </div>
-        </NavigationMenu>
-
-        <NotificationsProvider>
-          <main className="w-[100%] md:w-[80%] xl:w-[60%] relative flex flex-col m-auto text-main">
-            <Routes>
+            <div className="space-x-6 flex not-authenticated">
               {isLoggedIn ? (
-                // authenticated_only_routes
-                <>
-                  <Route
-                    path="/"
-                    element={
-                      <MainComponent
-                        connectedUsers={connectedUsers}
-                        isLoggedIn={isLoggedIn}
-                        currentUser={currentUser}
-                        userToken={userToken}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <SettingsComponent
-                        currentUser={currentUser}
-                        userToken={userToken}
-                        setUserToken={setUserToken}
-                        setCurrentUser={setCurrentUser}
-                      />
-                    }
-                  />
-                  <Route path="*" element={<Navigate to="/" />} />
-                </>
+                <AuthenticatedNav
+                  currentUser={currentUser}
+                  setCurrentUser={setCurrentUser}
+                  setIsLoggedIn={setIsLoggedIn}
+                />
               ) : (
-                // no_authenticated_routes
-                <>
-                  <Route
-                    path="/login"
-                    element={
-                      <LoginComponent
-                        setUserToken={setUserToken}
-                        setCurrentUser={setCurrentUser}
-                        setIsLoggedIn={setIsLoggedIn}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/signup"
-                    element={
-                      <SignUpComponent
-                        setUserToken={setUserToken}
-                        setCurrentUser={setCurrentUser}
-                        setIsLoggedIn={setIsLoggedIn}
-                      />
-                    }
-                  />
-                  <Route path="*" element={<Navigate to="/login" />} />
-                </>
+                <NotAuthenticatedNav />
               )}
-            </Routes>
-          </main>
-        </NotificationsProvider>
+            </div>
+          </NavigationMenu>
 
-        {/* <footer className="py-[100px]"></footer> */}
-      </Router>
+          <NotificationsProvider>
+            <main className="w-[100%] md:w-[80%] xl:w-[60%] relative flex flex-col m-auto text-main">
+              <Routes>
+                {isLoggedIn ? (
+                  // authenticated_only_routes
+                  <>
+                    <Route
+                      path="/"
+                      element={
+                        <MainComponent
+                          connectedUsers={connectedUsers}
+                          isLoggedIn={isLoggedIn}
+                          currentUser={currentUser}
+                          userToken={userToken}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <SettingsComponent
+                          currentUser={currentUser}
+                          userToken={userToken}
+                          setUserToken={setUserToken}
+                          setCurrentUser={setCurrentUser}
+                        />
+                      }
+                    />
+                    <Route path="*" element={<Navigate to="/" />} />
+                  </>
+                ) : (
+                  // no_authenticated_routes
+                  <>
+                    <Route
+                      path="/login"
+                      element={
+                        <LoginComponent
+                          setUserToken={setUserToken}
+                          setCurrentUser={setCurrentUser}
+                          setIsLoggedIn={setIsLoggedIn}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/signup"
+                      element={
+                        <SignUpComponent
+                          setUserToken={setUserToken}
+                          setCurrentUser={setCurrentUser}
+                          setIsLoggedIn={setIsLoggedIn}
+                        />
+                      }
+                    />
+                    <Route path="*" element={<Navigate to="/login" />} />
+                  </>
+                )}
+              </Routes>
+            </main>
+          </NotificationsProvider>
+
+          {/* <footer className="py-[100px]"></footer> */}
+        </Router>
     </SocketContext.Provider>
   );
 }

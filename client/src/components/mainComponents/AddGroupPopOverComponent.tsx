@@ -33,7 +33,6 @@ const AddGroupPopOverComponent = ({
 
     const groupName = groupNameInput?.value;
     const usersIds = usersSelect?.value.split(',');
-    console.log(usersIds);
 
 
     // query the api

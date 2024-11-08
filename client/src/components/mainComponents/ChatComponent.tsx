@@ -6,12 +6,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '../ui/button';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "../ui/button";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dispatch,
   FormEvent,
@@ -22,20 +22,20 @@ import {
   useEffect,
   useRef,
   useState,
-} from 'react';
-import CloseIcon from '../ui/CloseIcon';
-import { IoImageOutline } from 'react-icons/io5';
+} from "react";
+import CloseIcon from "../ui/CloseIcon";
+import { IoImageOutline } from "react-icons/io5";
 
-import MessageItem from './MessageItem';
+import MessageItem from "./MessageItem";
 
-import { SocketContext } from '../../context';
-import { Socket } from 'socket.io-client';
+import { SocketContext } from "../../context";
+import { Socket } from "socket.io-client";
 
-import { Conversation, Message, User } from '@/types';
-import { validURL } from '@/helpers';
-import { v4 as uuid } from 'uuid';
-import { chatComponentProps, SaveMessageParams } from './types';
-import { Textarea } from '../ui/textarea';
+import { Conversation, Message, User } from "@/types";
+import { validURL } from "@/helpers";
+import { v4 as uuid } from "uuid";
+import { chatComponentProps, SaveMessageParams } from "./types";
+import { Textarea } from "../ui/textarea";
 
 const saveMessage = ({
   userToken,
@@ -46,9 +46,9 @@ const saveMessage = ({
   conversationId,
 }: SaveMessageParams): void => {
   fetch(`${import.meta.env.VITE_API_BASE_URL}/users/message/:${senderId}`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-type': 'Application/json',
+      "Content-type": "Application/json",
       Authorization: `Bearer ${userToken}`,
     },
     body: JSON.stringify({
@@ -60,9 +60,6 @@ const saveMessage = ({
     }),
   })
     .then((res) => res.json())
-    .then((message) => {
-      console.log('message', message);
-    })
     .catch((err) => {
       console.log(err);
     });
@@ -74,7 +71,7 @@ const getReceiver = (
   setReceiver: (user: User | null) => void
 ): void => {
   fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${receiverId}`, {
-    method: 'GET',
+    method: "GET",
     headers: {
       Authorization: `Bearer ${userToken}`,
     },
@@ -117,7 +114,7 @@ const ChatComponent = ({
 
     getReceiver(userToken, receiverId, setReceiver);
 
-    messageInputRef.current!.value = '';
+    messageInputRef.current!.value = "";
     if (window.innerWidth > 700) {
       messageInputRef.current?.focus();
     }
@@ -134,10 +131,10 @@ const ChatComponent = ({
     scrollToElement(messageInputRef.current);
 
     // join the room of the conversation whenever it changes
-    socket?.emit('join-room', conversation?.id);
+    socket?.emit("join-room", conversation?.id);
 
     // listen to received messages in real time WHEN mounting AND whenever the conversation changes
-    socket?.on('receive-chat-message', (message: Message) => {
+    socket?.on("receive-chat-message", (message: Message) => {
       // in case of multiple emitted events for the same msg
       if (conversation.messages?.includes(message)) {
         return;
@@ -146,10 +143,11 @@ const ChatComponent = ({
       conversation.messages?.push(message);
       setConversation({ ...conversation });
       scrollToElement(scrollAresRef.current);
+      setMessageReadSatus(conversation?.id);
     });
 
     return () => {
-      socket?.removeAllListeners('receive-chat-message');
+      socket?.removeAllListeners("receive-chat-message");
     };
   }, [conversation]);
 
@@ -180,7 +178,8 @@ const ChatComponent = ({
     const receiversIds = receivers?.map((u) => u.id);
     let currentConversation: Conversation | null;
     if (receiversIds && receiversIds.length > 1) {
-      currentConversation = groups?.find((grp) => grp.id === emittedMsg.conversationId) || null;
+      currentConversation =
+        groups?.find((grp) => grp.id === emittedMsg.conversationId) || null;
       setGroups(moveConversationToTop(groups, currentConversation));
     } else {
       currentConversation =
@@ -189,12 +188,25 @@ const ChatComponent = ({
     }
 
     // emit send message event to the server
-    socket?.emit('send-chat-message', emittedMsg, conversation);
+    socket?.emit("send-chat-message", emittedMsg, conversation);
+  };
+
+  const setMessageReadSatus = (conversationId: string): void => {
+    fetch(import.meta.env.VITE_API_BASE_URL + "/message/status", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+        "Content-Type": "Application/json",
+      },
+      body: JSON.stringify({ conversationId }),
+    }).catch((error) => {
+      console.log(error);
+    });
   };
 
   // events handlers
   const handleMessageSend: ReactEventHandler = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     const message = messageInputRef.current?.value;
 
     // real time chatting logic AND saving the msg into the db :
@@ -232,7 +244,7 @@ const ChatComponent = ({
           conversationId: conversation.id,
         });
       }
-      messageInputRef.current.value = '';
+      messageInputRef.current.value = "";
     }
   };
   const handleImageSend: FormEventHandler = (e: FormEvent<HTMLInputElement>) => {
@@ -242,18 +254,18 @@ const ChatComponent = ({
       if (!target.files) return;
       const file = target.files[0];
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('fileName', file.name);
-      formData.append('receiverId', receiverId);
-      formData.append('conversationId', conversation.id);
+      formData.append("file", file);
+      formData.append("fileName", file.name);
+      formData.append("receiverId", receiverId);
+      formData.append("conversationId", conversation.id);
 
       const receivers = conversation.users?.filter((u) => u.id !== currentUser.id);
       const receiversIds = receivers?.map((u) => u.id);
-      formData.append('receiversIds', JSON.stringify(receiversIds));
+      formData.append("receiversIds", JSON.stringify(receiversIds));
 
       // send file to the server to upload it THEN send it as a message
-      fetch(import.meta.env.VITE_API_BASE_URL + '/users/message/uploadFile', {
-        method: 'POST',
+      fetch(import.meta.env.VITE_API_BASE_URL + "/users/message/uploadFile", {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${userToken}`,
         },
@@ -279,7 +291,9 @@ const ChatComponent = ({
     setConversation(null);
     setReceiverId(null);
   };
-  const scrollToElement = (scrollAresRef: HTMLDivElement | HTMLTextAreaElement | null): void => {
+  const scrollToElement = (
+    scrollAresRef: HTMLDivElement | HTMLTextAreaElement | null
+  ): void => {
     setTimeout(() => {
       scrollAresRef?.scrollIntoView(false);
     }, 0);
@@ -293,9 +307,9 @@ const ChatComponent = ({
               <Avatar>
                 <AvatarImage
                   src={
-                    validURL(receiver?.avatarUrl || '')
+                    validURL(receiver?.avatarUrl || "")
                       ? receiver?.avatarUrl
-                      : 'https://github.com/shadcn.png'
+                      : "https://github.com/shadcn.png"
                   }
                 />
               </Avatar>
@@ -325,7 +339,11 @@ const ChatComponent = ({
             className="space-y-6 px-1 sm:p-6 md:space-y-8 text-sm flex flex-col"
           >
             {conversation?.messages?.map((message) => (
-              <MessageItem key={message.id} message={message} currentUser={currentUser} />
+              <MessageItem
+                key={message.id}
+                message={message}
+                currentUser={currentUser}
+              />
             ))}
           </CardContent>
         </ScrollArea>
@@ -345,14 +363,20 @@ const ChatComponent = ({
             <Textarea
               ref={messageInputRef}
               onKeyDown={(e) =>
-                e.code === 'Enter' || e.code === 'NumpadEnter' ? handleMessageSend(e) : null
+                e.code === "Enter" || e.code === "NumpadEnter"
+                  ? handleMessageSend(e)
+                  : null
               }
               // type="text"
               className="z-10"
               placeholder="Type a message..."
             />
 
-            <Button type="submit" className="px-3 sm:px-4" onClick={handleMessageSend}>
+            <Button
+              type="submit"
+              className="px-3 sm:px-4"
+              onClick={handleMessageSend}
+            >
               Send
             </Button>
           </div>

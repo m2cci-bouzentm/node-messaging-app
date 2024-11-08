@@ -62,7 +62,6 @@ const useConversations = (
     })
       .then((res) => res.json())
       .then((conversations) => {
-        console.log('conversations', conversations);
         setConversations(conversations);
       })
       .catch((err) => {
@@ -88,7 +87,6 @@ const useGroups = (isLoggedIn: boolean, userToken: string | null): UseGroupsRetu
     })
       .then((res) => res.json())
       .then((groups) => {
-        console.log('groups', groups);
         setGroups(groups);
       })
       .catch((err) => {
@@ -146,6 +144,9 @@ const MainComponent = ({
   }, [users, conversations, groups]);
 
   useEffect(() => {
+    if (typeof groups === "undefined") return;
+    if (typeof conversations === "undefined") return;
+
     // notify the user when he receives a message
 
     // join a secret room to receive messages notifications
@@ -161,12 +162,11 @@ const MainComponent = ({
       notifications.show(`${message.sender?.username} ${grpNotif}: ${notifMsg}`, {
         autoHideDuration: 2000,
       });
-      console.log(message, grpName);
       prevMsg = { ...message };
 
       // handling the case of group chat to move the grp chat to the top of the list when receiving a message
       let conversation;
-      if (message.receivers && message.receivers.length > 1) {
+      if (message.receivers && message.receivers.length > 2) {
         conversation = groups?.find((grp) => grp.id === message.conversationId) || null;
         setGroups(moveConversationToTop(groups, conversation));
       } else {
@@ -178,7 +178,7 @@ const MainComponent = ({
     return () => {
       socket?.removeAllListeners('notify-receive-chat-message');
     };
-  }, []);
+  }, [groups, conversations]);
 
   // create conversation OR gets an existing one BETWEEN_TWO_USERS then set the receiver id
   const handleCreateOrGetExistingConversation = (receiverId: string) => {
@@ -197,8 +197,6 @@ const MainComponent = ({
     })
       .then((res) => res.json())
       .then((conversation) => {
-        console.log('conversation', conversation);
-
         setConversation(conversation);
         if (conversations) {
           const isAlreadyExistingConvo = conversations.some((conv) => conv.id === conversation.id);
@@ -381,8 +379,8 @@ const MainComponent = ({
                   return (
                     <ConversationListItemComponent
                       key={convo.id}
-                      currentUser={currentUser}
                       conversationId={convo.id}
+                      currentUser={currentUser}
                       conversations={conversations}
                       setConversations={setConversations}
                       userToken={userToken}

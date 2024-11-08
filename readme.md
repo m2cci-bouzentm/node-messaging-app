@@ -7,9 +7,12 @@ This is a messaging application built with a React frontend and a Node.js backen
 - Real-time messaging with socket.io
 - User authentication and authorization
 - Group and individual conversations
+- Sending images
 - File uploads
 - Message notifications
 - Mobile friendly UI
+- Tracking unread messages while offline in conversations
+- User settings page for managing username, password, email, and profile picture
 
 ## Technologies Used
 
@@ -115,7 +118,7 @@ readme.md
 
 ## TODOs
 
-- Add `isReadMessage` field to the `Message` model to track messages that were received while offline.
+- Display the count of unread messages in group chats to help users track messages received while they were offline.
 
 
 ## Contributing

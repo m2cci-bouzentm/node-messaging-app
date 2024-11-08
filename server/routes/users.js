@@ -16,5 +16,4 @@ router.post("/message/:senderId", usersController.sendMessage);
 
 
 
-
 module.exports = router;

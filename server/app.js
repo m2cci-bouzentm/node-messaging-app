@@ -31,7 +31,7 @@ const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const conversationRouter = require('./routes/conversation');
 const settingsRouter = require('./routes/settings');
-
+const messageRouter = require('./routes/message');
 
 const messagingHandlers = require('./eventHandlers/messagingEvents');
 
@@ -88,6 +88,7 @@ app.use('/', indexRouter);
 // only logged in users have access for these routes
 app.use('/users', isLoggedIn, usersRouter);
 app.use('/conversation', isLoggedIn, conversationRouter);
+app.use('/message', isLoggedIn, messageRouter);
 app.use('/settings', isLoggedIn, settingsRouter);
 
 

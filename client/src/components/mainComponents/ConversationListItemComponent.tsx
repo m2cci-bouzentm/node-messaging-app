@@ -1,4 +1,4 @@
-import { ReactEventHandler } from 'react';
+import { ReactEventHandler, useState, useEffect } from 'react';
 import { Avatar, AvatarImage } from '../ui/avatar';
 import { validURL } from '@/helpers';
 import { Separator } from '../ui/separator';
@@ -19,7 +19,14 @@ const ConversationListItemComponent = ({
   isConnectedUser,
   handleCreateOrGetExistingConversation,
 }: ConversationListItemComponentProps) => {
-  //
+
+  const [unReadMessages, setUnReadMessages] = useState<number>(0);
+
+  useEffect(() => {
+    // to run only once when mounting
+      getMessageReadSatus();
+  }, []);
+
   const handleConversationDelete: ReactEventHandler = (e): void => {
     e.stopPropagation();
 
@@ -47,11 +54,55 @@ const ConversationListItemComponent = ({
         console.log(error);
       });
   };
+
+  const setMessageReadSatus = (): void => {
+    fetch(import.meta.env.VITE_API_BASE_URL + '/message/status', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+        'Content-Type': 'Application/json',
+      },
+      body: JSON.stringify({ conversationId }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setUnReadMessages(data.unReadMessagesCount);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+
+  const getMessageReadSatus = (): void => {
+    fetch(import.meta.env.VITE_API_BASE_URL + `/message/status/${conversationId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+        'Content-Type': 'Application/json',
+      }
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setUnReadMessages(data.unReadMessagesCount);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+
+  const handleOpenConversation: ReactEventHandler = (): void => {
+    if (receiver) {
+      handleCreateOrGetExistingConversation(receiver.id);
+    }
+    if (unReadMessages > 0)
+      setMessageReadSatus();
+  }
+
   return (
     <>
       <div className="flex space-x-2 items-center py-1">
         <div
-          onClick={() => receiver && handleCreateOrGetExistingConversation(receiver.id)}
+          onClick={handleOpenConversation}
           className="flex w-full space-x-2 items-center cursor-pointer  hover:bg-hover py-1"
         >
           <Avatar>
@@ -67,6 +118,11 @@ const ConversationListItemComponent = ({
             <div className="text-sm w-full p-4">{receiver && receiver.username}</div>
             {receiver && isConnectedUser(connectedUsers, receiver) && (
               <div className="online-status h-2 w-2 bg-green-500 text-green-500 rounded-full"></div>
+            )}
+            {unReadMessages > 0 && (
+              <div className="unread-messages-status h-4 w-4 bg-red-400 text-main text-center text-[10px] rounded-full">
+                {unReadMessages}
+              </div>
             )}
           </div>
         </div>
